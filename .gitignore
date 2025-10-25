@@ -1,0 +1,15 @@
+# ==== Python (backend) ====
+backend/venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+instance/
+.env
+
+# ==== General ====
+.DS_Store
+*.log
+.idea/
+.vscode/
