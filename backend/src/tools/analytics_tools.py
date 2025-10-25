@@ -28,7 +28,10 @@ def get_financial_health_score_tool(
         queries = FinancialDataQueries()
         
         # Get balance
-        if company_id:
+        # Si user_id empieza con 'E', es una empresa
+        if user_id and user_id.startswith('E'):
+            balance_data = queries.get_company_balance(user_id)
+        elif company_id:
             balance_data = queries.get_company_balance(company_id)
         elif user_id:
             balance_data = queries.get_personal_balance(user_id)
