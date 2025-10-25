@@ -1,0 +1,91 @@
+/* Estilos del header de Banorte */
+.banorte > header * {
+    margin: 0;
+    padding: 0;
+}
+
+.banorte > header .header_top {
+    width: 100%;
+    height: 64px;
+    background-color: #eb0029;
+    background-repeat: repeat-x;
+    background-image: url(/navigation.png);
+    background-size: 43.5px 64px;
+}
+
+/* Reset general solo para elementos del header */
+.banorte > header abbr, 
+.banorte > header address, 
+.banorte > header article, 
+.banorte > header aside, 
+.banorte > header audio, 
+.banorte > header b, 
+.banorte > header blockquote, 
+.banorte > header canvas, 
+.banorte > header caption, 
+.banorte > header cite, 
+.banorte > header code, 
+.banorte > header dd, 
+.banorte > header del, 
+.banorte > header details, 
+.banorte > header dfn, 
+.banorte > header div, 
+.banorte > header dl, 
+.banorte > header dt, 
+.banorte > header em, 
+.banorte > header fieldset, 
+.banorte > header figcaption, 
+.banorte > header figure, 
+.banorte > header footer, 
+.banorte > header form, 
+.banorte > header h1, 
+.banorte > header h2, 
+.banorte > header h3, 
+.banorte > header h4, 
+.banorte > header h5, 
+.banorte > header h6, 
+.banorte > header hgroup, 
+.banorte > header i, 
+.banorte > header iframe, 
+.banorte > header img, 
+.banorte > header ins, 
+.banorte > header kbd, 
+.banorte > header label, 
+.banorte > header legend, 
+.banorte > header li, 
+.banorte > header mark, 
+.banorte > header menu, 
+.banorte > header nav, 
+.banorte > header object, 
+.banorte > header ol, 
+.banorte > header p, 
+.banorte > header pre, 
+.banorte > header q, 
+.banorte > header samp, 
+.banorte > header section, 
+.banorte > header small, 
+.banorte > header span, 
+.banorte > header strong, 
+.banorte > header sub, 
+.banorte > header summary, 
+.banorte > header sup, 
+.banorte > header table, 
+.banorte > header tbody, 
+.banorte > header td, 
+.banorte > header tfoot, 
+.banorte > header th, 
+.banorte > header thead, 
+.banorte > header time, 
+.banorte > header tr, 
+.banorte > header ul, 
+.banorte > header var, 
+.banorte > header video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+

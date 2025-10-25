@@ -59,6 +59,11 @@ export default function Home() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <div className="banorte">
+        <header>
+          <div className="header_top"></div>
+        </header>
+      </div>
       <Box sx={{
         flexGrow: 1,
         minHeight: "100vh",

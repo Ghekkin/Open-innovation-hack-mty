@@ -1,7 +1,169 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GEMINI_API_KEY = 'AIzaSyA7ulbb1wr_tv6imm8VlrhgARKH8RCRtOs';
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyA7ulbb1wr_tv6imm8VlrhgARKH8RCRtOs';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:8080';
+
+let mcpSessionId: string | null = null;
+let mcpRequestId = 0;
+
+/**
+ * Llama al servidor MCP para obtener datos financieros
+ */
+async function callMCPTool(toolName: string, args: Record<string, any> = {}) {
+  try {
+    mcpRequestId++;
+
+    // Inicializar sesión si no existe
+    if (!mcpSessionId) {
+      const initPayload = {
+        jsonrpc: '2.0',
+        method: 'initialize',
+        id: mcpRequestId,
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: {
+            name: 'chat-api',
+            version: '1.0.0'
+          }
+        }
+      };
+
+      const initResponse = await fetch(`${MCP_SERVER_URL}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream'
+        },
+        body: JSON.stringify(initPayload)
+      });
+
+      if (initResponse.ok) {
+        mcpSessionId = initResponse.headers.get('mcp-session-id');
+      }
+    }
+
+    // Llamar a la herramienta
+    const payload = {
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      id: ++mcpRequestId,
+      params: {
+        name: toolName,
+        arguments: args
+      }
+    };
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/event-stream'
+    };
+
+    if (mcpSessionId) {
+      headers['mcp-session-id'] = mcpSessionId;
+    }
+
+    const response = await fetch(`${MCP_SERVER_URL}/mcp`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error MCP: ${response.status}`);
+    }
+
+    const text = await response.text();
+    let data;
+
+    // Parsear SSE o JSON
+    if (text.startsWith('event: message')) {
+      const lines = text.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          data = JSON.parse(line.substring(6));
+          break;
+        }
+      }
+    } else {
+      data = JSON.parse(text);
+    }
+
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    return data.result;
+  } catch (error) {
+    console.error(`Error al llamar herramienta MCP ${toolName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Detecta qué herramienta MCP usar basándose en el mensaje del usuario
+ */
+function detectMCPTool(message: string): { tool: string; args: any } | null {
+  const lowerMessage = message.toLowerCase();
+
+  // Balance de empresa
+  if (lowerMessage.includes('balance') && (lowerMessage.includes('empresa') || lowerMessage.includes('compañía') || lowerMessage.includes('negocio'))) {
+    return { tool: 'get_company_balance', args: {} };
+  }
+
+  // Balance personal
+  if (lowerMessage.includes('balance') && (lowerMessage.includes('personal') || lowerMessage.includes('mío') || lowerMessage.includes('mi'))) {
+    return { tool: 'get_personal_balance', args: {} };
+  }
+
+  // Gastos por categoría - MEJORADO
+  if (lowerMessage.includes('gasto') || lowerMessage.includes('analizar') && (lowerMessage.includes('categoría') || lowerMessage.includes('categoria') || lowerMessage.includes('áreas') || lowerMessage.includes('areas') || lowerMessage.includes('oportunidad'))) {
+    return { tool: 'analyze_expenses_by_category', args: {} };
+  }
+
+  // Proyección de flujo
+  if (lowerMessage.includes('proyección') || lowerMessage.includes('proyeccion') || lowerMessage.includes('flujo')) {
+    return { tool: 'project_cash_flow', args: {} };
+  }
+
+  // Salud financiera
+  if (lowerMessage.includes('salud') && lowerMessage.includes('financiera')) {
+    return { tool: 'get_financial_health_score', args: {} };
+  }
+
+  // Tendencias
+  if (lowerMessage.includes('tendencia') || lowerMessage.includes('tendencias')) {
+    return { tool: 'get_spending_trends', args: {} };
+  }
+
+  // Recomendaciones
+  if (lowerMessage.includes('recomendación') || lowerMessage.includes('recomendacion') || lowerMessage.includes('recomienda')) {
+    return { tool: 'get_category_recommendations', args: {} };
+  }
+
+  // Anomalías
+  if (lowerMessage.includes('anomalía') || lowerMessage.includes('anomalia') || lowerMessage.includes('extraño')) {
+    return { tool: 'detect_anomalies', args: {} };
+  }
+
+  // Riesgo
+  if (lowerMessage.includes('riesgo')) {
+    return { tool: 'assess_financial_risk', args: {} };
+  }
+
+  // Alertas
+  if (lowerMessage.includes('alerta') || lowerMessage.includes('alertas')) {
+    return { tool: 'get_alerts', args: {} };
+  }
+
+  // Escasez de efectivo
+  if (lowerMessage.includes('escasez') || lowerMessage.includes('falta') && lowerMessage.includes('efectivo')) {
+    return { tool: 'predict_cash_shortage', args: {} };
+  }
+
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,16 +176,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Contexto bancario para el asistente
-    const systemPrompt = `Eres un asistente virtual de Banorte, un banco mexicano. 
-Tu trabajo es ayudar a los clientes con información sobre:
-- Consultas de saldo y movimientos
-- Información de productos bancarios (tarjetas, créditos, inversiones)
-- Ayuda con transferencias y pagos
-- Información de clientes y cuentas
+    // Detectar si necesitamos llamar al MCP
+    const mcpTool = detectMCPTool(message);
+    let mcpData = null;
+    let mcpContext = '';
 
-Responde de manera profesional, clara y en español. Si te preguntan por información de un cliente específico, 
-puedes inventar datos realistas de ejemplo (nombre, saldo, últimos movimientos, etc.) para demostrar la funcionalidad.`;
+    if (mcpTool) {
+      console.log(`[Chat] Detectada herramienta MCP: ${mcpTool.tool}`);
+      console.log(`[Chat] URL del servidor MCP: ${MCP_SERVER_URL}`);
+      mcpData = await callMCPTool(mcpTool.tool, mcpTool.args);
+      
+      if (mcpData) {
+        console.log(`[Chat] Datos MCP recibidos:`, mcpData);
+        if (mcpData.structuredContent) {
+          mcpContext = `\n\nDATOS FINANCIEROS REALES (del servidor MCP):\n${JSON.stringify(mcpData.structuredContent, null, 2)}`;
+        }
+      } else {
+        console.log(`[Chat] No se recibieron datos del MCP`);
+      }
+    } else {
+      console.log(`[Chat] No se detectó herramienta MCP para el mensaje: "${message}"`);
+    }
+
+    // Contexto bancario para el asistente
+    const systemPrompt = `Eres un asistente virtual financiero de Banorte, un banco mexicano. 
+Tu trabajo es ayudar a los clientes con información financiera usando datos REALES de un servidor MCP.
+
+Tienes acceso a las siguientes herramientas financieras:
+- Balance de empresa y personal
+- Análisis de gastos por categoría
+- Proyecciones de flujo de caja
+- Simulaciones de escenarios
+- Evaluación de salud financiera
+- Detección de anomalías
+- Recomendaciones personalizadas
+- Alertas y predicciones
+
+IMPORTANTE: 
+- Si te proporcionan datos financieros reales (marcados como "DATOS FINANCIEROS REALES"), ÚSALOS en tu respuesta.
+- Presenta los números de forma clara y legible (con separadores de miles y formato de moneda).
+- Da insights y análisis útiles basados en los datos.
+- Si no hay datos disponibles, explica qué información necesitas.
+
+Responde de manera profesional, clara y en español.${mcpContext}`;
 
     // Llamada a Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -45,7 +240,7 @@ puedes inventar datos realistas de ejemplo (nombre, saldo, últimos movimientos,
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048,
         }
       })
     });
@@ -71,6 +266,8 @@ puedes inventar datos realistas de ejemplo (nombre, saldo, últimos movimientos,
     return NextResponse.json({
       success: true,
       response: aiResponse,
+      mcpData: mcpData?.structuredContent || null,
+      mcpTool: mcpTool?.tool || null,
       rawJson: data, // JSON completo de la API
       timestamp: new Date().toISOString()
     });

@@ -116,14 +116,19 @@ export default function DashboardLayout({
         <CssBaseline />
         <AppBar
           position="fixed"
+          className="banorte"
           sx={{
             width: { sm: `calc(100% - ${drawerWidth}px)` },
             ml: { sm: `${drawerWidth}px` },
-            bgcolor: "primary.main",
+            bgcolor: "#eb0029",
+            backgroundImage: "url(/navigation.png)",
+            backgroundRepeat: "repeat-x",
+            backgroundSize: "43.5px 64px",
             boxShadow: 1,
+            height: "64px",
           }}
         >
-          <Toolbar>
+          <Toolbar sx={{ height: "64px" }}>
             <IconButton
               aria-label="open drawer"
               edge="start"
@@ -149,11 +154,15 @@ export default function DashboardLayout({
             ModalProps={{
               keepMounted: true, // Better open performance on mobile.
             }}
+            className="banorte"
             sx={{
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
                 width: drawerWidth,
-                bgcolor: "primary.main",
+                bgcolor: "#eb0029",
+                backgroundImage: "url(/navigation.png)",
+                backgroundRepeat: "repeat-x",
+                backgroundSize: "43.5px 64px",
                 borderRight: "1px solid rgba(0, 0, 0, 0.12)",
               },
             }}
