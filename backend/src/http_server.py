@@ -43,15 +43,16 @@ async def lifespan(app: FastAPI):
     """Lifecycle management for the HTTP server."""
     logger.info("🚀 Iniciando servidor HTTP MCP Financiero...")
     
-    # Test database connection on startup
+    # Test database connection on startup (non-blocking)
     try:
         db = get_db_connection()
         if db.test_connection():
             logger.info("✅ Conexión a base de datos establecida exitosamente")
         else:
-            logger.warning("⚠️ No se pudo conectar a la base de datos")
+            logger.warning("⚠️ No se pudo conectar a la base de datos - el servidor iniciará de todos modos")
     except Exception as e:
         logger.error(f"❌ Error al conectar a la base de datos: {e}")
+        logger.warning("⚠️ El servidor iniciará sin conexión a base de datos - algunas funciones pueden fallar")
     
     yield
     
@@ -135,11 +136,14 @@ async def health_check():
     try:
         db = get_db_connection()
         db_connected = db.test_connection()
+        logger.info(f"Health check: DB connected = {db_connected}")
     except Exception as e:
-        logger.error(f"Error en health check: {e}")
+        logger.warning(f"Health check: DB connection failed - {e}")
     
+    # Servidor está "healthy" si está corriendo, aunque la BD no esté conectada
+    # Esto permite que el servidor inicie y sea accesible
     return HealthResponse(
-        status="healthy" if db_connected else "degraded",
+        status="healthy",  # Siempre healthy si el servidor responde
         database_connected=db_connected,
         version="1.0.0"
     )
@@ -354,11 +358,23 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    port = int(os.getenv("PORT", 8080))
+    
+    logger.info("=" * 60)
+    logger.info("🚀 INICIANDO SERVIDOR HTTP MCP FINANCIERO")
+    logger.info("=" * 60)
+    logger.info(f"Puerto: {port}")
+    logger.info(f"Host: 0.0.0.0")
+    logger.info(f"Entorno: {os.getenv('ENVIRONMENT', 'development')}")
+    logger.info(f"DB Host: {os.getenv('DB_HOST', 'no configurado')}")
+    logger.info("=" * 60)
     
     uvicorn.run(
         "http_server:app",
         host="0.0.0.0",
-        port=8080,
+        port=port,
         reload=False,
         log_level="info"
     )
