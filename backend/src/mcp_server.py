@@ -27,9 +27,18 @@ from tools import (
     get_personal_balance_tool,
     get_expenses_by_category_tool,
     get_cash_flow_projection_tool,
-    get_budget_comparison_tool
+    get_budget_comparison_tool,
+    simulate_scenario_tool,
+    get_financial_health_score_tool,
+    get_spending_trends_tool,
+    get_category_recommendations_tool,
+    detect_anomalies_tool,
+    compare_periods_tool,
+    assess_financial_risk_tool,
+    get_alerts_tool,
+    predict_cash_shortage_tool,
+    get_stress_test_tool
 )
-from tools.projection_tools import simulate_scenario_tool
 from utils import setup_logger
 
 # Setup logger
@@ -211,6 +220,216 @@ async def list_tools() -> list[Tool]:
                 },
             },
         ),
+        Tool(
+            name="get_financial_health_score",
+            description=(
+                "Calcula un score integral de salud financiera (0-100) "
+                "analizando múltiples métricas: tasa de ahorro, ratio de gastos, "
+                "y balance. Incluye recomendaciones personalizadas."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "description": "ID del usuario para finanzas personales (opcional)",
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="get_spending_trends",
+            description=(
+                "Analiza tendencias de gasto a lo largo del tiempo. "
+                "Identifica patrones, crecimiento promedio, y meses con "
+                "mayor/menor gasto. Útil para entender comportamiento financiero."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "months_back": {
+                        "type": "integer",
+                        "description": "Número de meses a analizar (1-24, default: 6)",
+                        "minimum": 1,
+                        "maximum": 24,
+                        "default": 6,
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="get_category_recommendations",
+            description=(
+                "Genera recomendaciones personalizadas para optimizar gastos "
+                "por categoría. Identifica las categorías con mayor gasto y "
+                "sugiere acciones específicas para reducir costos."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "description": "Número de categorías principales a analizar (default: 5)",
+                        "default": 5,
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="detect_anomalies",
+            description=(
+                "Detecta transacciones o patrones de gasto inusuales que "
+                "se desvían significativamente del promedio. Útil para "
+                "identificar gastos sospechosos o excepcionales."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "threshold": {
+                        "type": "number",
+                        "description": "Umbral de desviación estándar (default: 2.0)",
+                        "default": 2.0,
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="compare_periods",
+            description=(
+                "Compara métricas financieras entre dos períodos de tiempo. "
+                "Muestra cambios absolutos y porcentuales en ingresos, gastos "
+                "y balance. Ideal para análisis de crecimiento."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "period1_start": {
+                        "type": "string",
+                        "description": "Fecha inicio período 1 (YYYY-MM-DD)",
+                    },
+                    "period1_end": {
+                        "type": "string",
+                        "description": "Fecha fin período 1 (YYYY-MM-DD)",
+                    },
+                    "period2_start": {
+                        "type": "string",
+                        "description": "Fecha inicio período 2 (YYYY-MM-DD)",
+                    },
+                    "period2_end": {
+                        "type": "string",
+                        "description": "Fecha fin período 2 (YYYY-MM-DD)",
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="assess_financial_risk",
+            description=(
+                "Evalúa el nivel de riesgo financiero general. Analiza "
+                "múltiples factores de riesgo como balance negativo, ratio "
+                "de gastos alto, y reservas bajas. Proporciona un score de riesgo."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="get_alerts",
+            description=(
+                "Obtiene alertas financieras activas que requieren atención. "
+                "Identifica problemas como balance bajo, gastos excesivos, "
+                "o falta de ingresos. Puede filtrar por severidad."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "severity": {
+                        "type": "string",
+                        "description": "Filtrar por severidad: 'low', 'medium', 'high', 'critical'",
+                        "enum": ["low", "medium", "high", "critical"],
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="predict_cash_shortage",
+            description=(
+                "Predice posibles escaseces de efectivo en el futuro basándose "
+                "en tendencias actuales. Identifica cuándo podría ocurrir una "
+                "escasez y proporciona recomendaciones preventivas."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "months_ahead": {
+                        "type": "integer",
+                        "description": "Meses a predecir (default: 6)",
+                        "default": 6,
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="get_stress_test",
+            description=(
+                "Realiza una prueba de estrés financiero simulando escenarios "
+                "adversos (reducción de ingresos y aumento de gastos). Evalúa "
+                "la resiliencia financiera y tiempo de supervivencia."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "company_id": {
+                        "type": "string",
+                        "description": "ID de la empresa (opcional)",
+                    },
+                    "income_reduction": {
+                        "type": "number",
+                        "description": "Porcentaje de reducción en ingresos (default: 30)",
+                        "default": 30.0,
+                    },
+                    "expense_increase": {
+                        "type": "number",
+                        "description": "Porcentaje de aumento en gastos (default: 20)",
+                        "default": 20.0,
+                    },
+                },
+            },
+        ),
     ]
 
 
@@ -267,6 +486,63 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageCo
                 company_id=arguments.get("company_id"),
                 month=arguments.get("month"),
                 year=arguments.get("year")
+            )
+        
+        elif name == "get_financial_health_score":
+            result = get_financial_health_score_tool(
+                company_id=arguments.get("company_id"),
+                user_id=arguments.get("user_id")
+            )
+        
+        elif name == "get_spending_trends":
+            result = get_spending_trends_tool(
+                company_id=arguments.get("company_id"),
+                months_back=arguments.get("months_back", 6)
+            )
+        
+        elif name == "get_category_recommendations":
+            result = get_category_recommendations_tool(
+                company_id=arguments.get("company_id"),
+                top_n=arguments.get("top_n", 5)
+            )
+        
+        elif name == "detect_anomalies":
+            result = detect_anomalies_tool(
+                company_id=arguments.get("company_id"),
+                threshold=arguments.get("threshold", 2.0)
+            )
+        
+        elif name == "compare_periods":
+            result = compare_periods_tool(
+                company_id=arguments.get("company_id"),
+                period1_start=arguments.get("period1_start"),
+                period1_end=arguments.get("period1_end"),
+                period2_start=arguments.get("period2_start"),
+                period2_end=arguments.get("period2_end")
+            )
+        
+        elif name == "assess_financial_risk":
+            result = assess_financial_risk_tool(
+                company_id=arguments.get("company_id")
+            )
+        
+        elif name == "get_alerts":
+            result = get_alerts_tool(
+                company_id=arguments.get("company_id"),
+                severity=arguments.get("severity")
+            )
+        
+        elif name == "predict_cash_shortage":
+            result = predict_cash_shortage_tool(
+                company_id=arguments.get("company_id"),
+                months_ahead=arguments.get("months_ahead", 6)
+            )
+        
+        elif name == "get_stress_test":
+            result = get_stress_test_tool(
+                company_id=arguments.get("company_id"),
+                income_reduction=arguments.get("income_reduction", 30.0),
+                expense_increase=arguments.get("expense_increase", 20.0)
             )
         
         else:

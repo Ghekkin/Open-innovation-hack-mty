@@ -32,8 +32,8 @@ def setup_logger(
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
+    # Console handler (use stderr to avoid interfering with MCP stdio JSON stream)
+    console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)

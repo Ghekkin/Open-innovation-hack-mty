@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+      "mcp-financiero": {
+        "command": "C:\\Open-innovation-hack-mty\\backend\\venv\\Scripts\\python.exe",
+        "args": [
+          "C:\\Open-innovation-hack-mty\\backend\\src\\mcp_server.py"
+        ],
+        "env": {
+          "DB_HOST": "localhost",
+          "DB_PORT": "3306",
+          "DB_USER": "root",
+          "DB_PASSWORD": "contraseña",
+          "DB_NAME": "oi_banorte",
+          "PYTHONPATH": "C:\\Open-innovation-hack-mty\\backend\\src"
+        }
+      }
+  
+    }
+  }
