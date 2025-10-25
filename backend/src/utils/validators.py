@@ -39,3 +39,21 @@ def validate_amount(amount: any) -> Tuple[bool, Optional[float], Optional[str]]:
     except (ValueError, TypeError) as e:
         return False, None, f"Monto inválido: {str(e)}"
 
+def parse_date(s: str) -> datetime:
+    try:
+        return datetime.strptime(s, '%Y-%m-%d')
+    except Exception:
+        raise ValueError('Formato de fecha inválido. Use YYYY-MM-DD')
+
+
+def validate_entity_type(entity_type: str) -> None:
+    if entity_type not in ('company', 'personal'):
+        raise ValueError('entity_type debe ser "company" o "personal"')
+
+
+def validate_pagination(limit: int, offset: int, max_limit: int = 200) -> tuple[int, int]:
+    if limit < 1 or limit > max_limit:
+        limit = min(max(limit, 1), max_limit)
+    if offset < 0:
+        offset = 0
+    return limit, offset
