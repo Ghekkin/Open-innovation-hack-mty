@@ -129,11 +129,11 @@ export default function Dashboard() {
                   <AssistantIcon sx={{ color: "white" }} />
                 </Avatar>
                 <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                  Asistente Banorte
+                  Asistente virtual Sayuri
                 </Typography>
               </Box>
               <Typography variant="body1">
-                ¡Hola! Soy tu asistente virtual de Banorte. Estoy aquí para ayudarte con cualquier consulta sobre tus finanzas, productos bancarios, o cualquier otra duda que tengas. ¿En qué puedo ayudarte hoy?
+                ¡Hola! Soy Sayuri, tu asistente virtual de Banorte. Estoy aquí para ayudarte con cualquier consulta sobre tus finanzas, productos bancarios, o cualquier otra duda que tengas. ¿En qué puedo ayudarte hoy?
               </Typography>
             </Box>
 

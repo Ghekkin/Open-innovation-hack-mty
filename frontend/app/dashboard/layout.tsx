@@ -127,7 +127,7 @@ export default function DashboardLayout({
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" noWrap component="div" sx={{ color: "white" }} fontWeight="bold">
-              Dashboard
+              Asistente Virtual Banorte
             </Typography>
           </Toolbar>
         </AppBar>
