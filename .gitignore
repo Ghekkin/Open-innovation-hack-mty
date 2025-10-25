@@ -13,3 +13,4 @@ instance/
 *.log
 .idea/
 .vscode/
+.cursor/
