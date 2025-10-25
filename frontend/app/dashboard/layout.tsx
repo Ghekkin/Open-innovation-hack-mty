@@ -21,6 +21,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import ChatIcon from "@mui/icons-material/Chat";
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -49,6 +50,7 @@ const customTheme = createTheme({
 const menuItems = [
   { text: "Inicio", icon: <HomeIcon />, path: "/dashboard" },
   { text: "Asistente", icon: <ChatIcon />, path: "/dashboard/asistente" },
+  { text: "Plan Financiero", icon: <AccountBalanceWalletIcon />, path: "/dashboard/plan-financiero" },
 ];
 
 export default function DashboardLayout({
