@@ -1,6 +1,6 @@
 """
 Punto de entrada principal para el servidor MCP Financiero.
-Inicia el servidor HTTP para que pueda ser usado con Gemini y otros clientes.
+Inicia el servidor MCP sobre HTTP usando FastMCP.
 """
 
 import os
@@ -13,9 +13,9 @@ src_dir = backend_dir / 'src'
 sys.path.insert(0, str(src_dir))
 
 if __name__ == "__main__":
-    import uvicorn
     from utils import setup_logger
     import logging
+    import asyncio
     
     logger = setup_logger('main', logging.INFO)
     
@@ -23,20 +23,27 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     
     logger.info("=" * 60)
-    logger.info("🚀 INICIANDO SERVIDOR MCP FINANCIERO")
+    logger.info("🚀 INICIANDO SERVIDOR MCP FINANCIERO SOBRE HTTP")
     logger.info("=" * 60)
     logger.info(f"Puerto: {port}")
     logger.info(f"Host: {host}")
+    logger.info(f"Protocolo: MCP sobre HTTP (streamable-http)")
     logger.info(f"Entorno: {os.getenv('ENVIRONMENT', 'development')}")
     logger.info(f"DB Host: {os.getenv('DB_HOST', 'no configurado')}")
     logger.info("=" * 60)
     
-    # Importar la app después de configurar el path
-    from http_server import app
+    # Importar el servidor MCP sobre HTTP
+    from mcp_http_server import mcp, initialize_server
     
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level="info"
+    # Inicializar el servidor
+    initialize_server()
+    
+    # Ejecutar el servidor MCP sobre HTTP
+    # streamable-http es el transporte correcto para Coolify y despliegues HTTP
+    asyncio.run(
+        mcp.run_async(
+            transport="streamable-http",
+            host=host,
+            port=port,
+        )
     )

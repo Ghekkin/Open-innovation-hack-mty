@@ -1,5 +1,6 @@
 # MCP Server Dependencies
 mcp>=1.0.0
+fastmcp>=0.2.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 

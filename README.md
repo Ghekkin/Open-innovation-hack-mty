@@ -177,13 +177,26 @@ Estos datos serán la base para que el servidor MCP realice análisis, proyeccio
 
 ---
 
-## 🛠️ Tecnologías Sugeridas
+## 🛠️ Tecnologías Utilizadas
 
-- **Backend/MCP**: Node.js, Python, o cualquier lenguaje compatible con MCP
-- **Frontend**: React, Vue, Next.js, o frameworks modernos
-- **Base de datos**: PostgreSQL, MySQL, SQLite, o similar
-- **IA/ML**: OpenAI API, Claude API, o modelos locales
-- **Visualización**: Chart.js, D3.js, Recharts, o librerías similares
+### Backend (MCP sobre HTTP)
+- **Framework**: FastMCP (Python)
+- **Protocolo**: MCP (Model Context Protocol) sobre HTTP
+- **Transporte**: JSON-RPC 2.0 sobre HTTP
+- **Base de datos**: MySQL 8.0+
+- **Herramientas**: 14 herramientas financieras avanzadas
+
+### Frontend
+- **Framework**: Next.js 14+ (React)
+- **Styling**: Tailwind CSS
+- **Visualización**: Chart.js / Recharts
+
+### Infraestructura
+- **Deployment**: Railway / Render
+- **Containerización**: Docker
+- **CI/CD**: GitHub Actions
+
+📖 **[Ver documentación completa del backend MCP](./backend/README.md)**
 
 ---
 
