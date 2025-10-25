@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+// Usar GEMINI_API_KEY sin el prefijo NEXT_PUBLIC_ para el servidor
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
 
 // Definición de herramientas MCP para Gemini
 const MCP_TOOLS_DEFINITIONS = [
@@ -91,11 +92,26 @@ const MCP_TOOLS_DEFINITIONS = [
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Verificar que la API key esté disponible
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    console.log('🔑 API Key disponible:', apiKey ? `Sí (${apiKey.substring(0, 10)}...)` : 'NO');
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { 
+          error: 'API Key de Gemini no configurada',
+          response: 'Por favor configura GEMINI_API_KEY en .env.local'
+        },
+        { status: 500 }
+      );
+    }
+    
     const { message, history = [] } = await request.json();
 
     // Crear el modelo con function calling
+    // Usar gemini-1.5-flash que soporta function calling
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro',
+      model: 'gemini-1.5-flash',
       tools: [{
         functionDeclarations: MCP_TOOLS_DEFINITIONS.map(tool => ({
           name: tool.name,
@@ -105,9 +121,16 @@ export async function POST(request: NextRequest) {
       }]
     });
 
-    // Construir el historial de chat (filtrar el mensaje inicial del asistente)
+    // Construir el historial de chat
+    // Gemini requiere que el primer mensaje sea del usuario, así que filtramos el mensaje inicial del asistente
     const chatHistory = history
-      .filter((msg: any) => msg.role === 'user' || msg.content !== messages[0]?.content)
+      .filter((msg: any, index: number) => {
+        // Si es el primer mensaje y es del asistente, lo omitimos
+        if (index === 0 && msg.role === 'assistant') {
+          return false;
+        }
+        return true;
+      })
       .map((msg: any) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
