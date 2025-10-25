@@ -20,8 +20,7 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
-import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
+import ChatIcon from "@mui/icons-material/Chat";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -31,20 +30,25 @@ const drawerWidth = 240;
 const customTheme = createTheme({
   palette: {
     primary: {
-      main: "#FF0000",
-      light: "#FF3333",
-      dark: "#CC0000",
+      main: "#EC0029", // Spanish Red
+      light: "#FF3355",
+      dark: "#C00020",
     },
     background: {
-      default: "#FFFFFF",
+      default: "#F5F5F5", // Cultured
+      paper: "#FFFFFF",
     },
+    grey: {
+      100: "#F5F5F5",
+      200: "#C7C9C9", // Chinese Silver
+      500: "#6A6867", // Dim Gray
+    }
   },
 });
 
 const menuItems = [
-  { text: "Home", icon: <HomeIcon />, path: "/dashboard" },
-  { text: "Profile", icon: <PersonIcon />, path: "/dashboard/profile" },
-  { text: "Settings", icon: <SettingsIcon />, path: "/dashboard/settings" },
+  { text: "Inicio", icon: <HomeIcon />, path: "/dashboard" },
+  { text: "Asistente", icon: <ChatIcon />, path: "/dashboard/asistente" },
 ];
 
 export default function DashboardLayout({
