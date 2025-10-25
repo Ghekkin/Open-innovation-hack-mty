@@ -17,6 +17,22 @@ from .risk_tools import (
     get_stress_test_tool
 )
 
+from .descriptive_tools import (
+    list_transactions_tool,
+    top_categories_tool,
+    monthly_summary_tool,
+)
+from .predictive_tools import (
+    cash_runway_tool,
+    forecast_expenses_by_category_tool,
+    bill_forecaster_tool,
+)
+from .planning_tools import (
+    goal_based_plan_tool,
+    budget_allocator_tool,
+    debt_paydown_optimizer_tool,
+)
+
 __all__ = [
     'get_balance_tool',
     'get_company_balance_tool',
@@ -33,6 +49,15 @@ __all__ = [
     'assess_financial_risk_tool',
     'get_alerts_tool',
     'predict_cash_shortage_tool',
-    'get_stress_test_tool'
+    'get_stress_test_tool',
+    'list_transactions_tool',
+    'top_categories_tool',
+    'monthly_summary_tool',
+    'cash_runway_tool',
+    'forecast_expenses_by_category_tool',
+    'bill_forecaster_tool',
+    'goal_based_plan_tool',
+    'budget_allocator_tool',
+    'debt_paydown_optimizer_tool',
 ]
 

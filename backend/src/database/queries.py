@@ -3,6 +3,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from .connection import get_db_connection
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,307 @@ class FinancialDataQueries:
     
     def __init__(self):
         self.db = get_db_connection()
+
+    def list_transactions(
+        self,
+        entity_type: str,
+        entity_id: str | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+        category: str | None,
+        min_amount: float | None,
+        max_amount: float | None,
+        txn_type: str | None,  # 'ingreso' | 'gasto'
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """Lista transacciones con filtros y paginación.
+        Asume tabla `finanzas_empresa(empresa_id, user_id?, fecha, tipo, monto, categoria, descripcion, contraparte)`.
+        Si no hay `user_id` en la tabla (solo empresa), `entity_type` personal no aplicará.
+        """
+        where = []
+        params: list[Any] = []
+        if entity_type == 'company' and entity_id:
+            where.append("empresa_id = %s")
+            params.append(entity_id)
+        elif entity_type == 'personal' and entity_id:
+            # Si tu esquema usa `usuario_id` en otra tabla, ajusta este filtro
+            where.append("usuario_id = %s")
+            params.append(entity_id)
+        if start_date:
+            where.append("fecha >= %s")
+            params.append(start_date)
+        if end_date:
+            where.append("fecha <= %s")
+            params.append(end_date)
+        if category:
+            where.append("categoria = %s")
+            params.append(category)
+        if min_amount is not None:
+            where.append("monto >= %s")
+            params.append(min_amount)
+        if max_amount is not None:
+            where.append("monto <= %s")
+            params.append(max_amount)
+        if txn_type in ('ingreso', 'gasto'):
+            where.append("tipo = %s")
+            params.append(txn_type)
+
+        base = "FROM finanzas_empresa"
+        where_clause = (" WHERE " + " AND ".join(where)) if where else ""
+
+        # Total
+        total_q = f"SELECT COUNT(*) AS c {base}{where_clause}"
+        total_res = self.db.execute_query(total_q, tuple(params) if params else None)
+        total = int(total_res[0]['c']) if total_res else 0
+
+        # Page
+        page_q = (
+            f"SELECT id, fecha, tipo, monto, categoria, descripcion, contraparte "
+            f"{base}{where_clause} "
+            f"ORDER BY fecha DESC, id DESC LIMIT %s OFFSET %s"
+        )
+        page_params = params + [limit, offset]
+        rows = self.db.execute_query(page_q, tuple(page_params))
+
+        items = [
+            {
+                'id': r.get('id'),
+                'fecha': r.get('fecha').isoformat() if r.get('fecha') else None,
+                'tipo': r.get('tipo'),
+                'monto': float(r.get('monto') or 0),
+                'categoria': r.get('categoria'),
+                'descripcion': r.get('descripcion'),
+                'contraparte': r.get('contraparte'),
+            }
+            for r in rows
+        ]
+        return {
+            'items': items,
+            'total': total,
+        }
+
+    def get_top_categories(
+        self,
+        entity_type: str,
+        entity_id: str | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+        direction: str = 'gasto',  # 'gasto' | 'ingreso'
+        top_n: int = 5,
+    ) -> List[Dict[str, Any]]:
+        where = []
+        params: list[Any] = []
+        where.append("tipo = %s")
+        params.append(direction)
+        if entity_type == 'company' and entity_id:
+            where.append("empresa_id = %s")
+            params.append(entity_id)
+        elif entity_type == 'personal' and entity_id:
+            where.append("usuario_id = %s")
+            params.append(entity_id)
+        if start_date:
+            where.append("fecha >= %s")
+            params.append(start_date)
+        if end_date:
+            where.append("fecha <= %s")
+            params.append(end_date)
+
+        q = (
+            "SELECT categoria, SUM(monto) AS total, COUNT(*) AS n "
+            "FROM finanzas_empresa "
+            + (" WHERE " + " AND ".join(where) if where else "")
+            + " GROUP BY categoria ORDER BY total DESC LIMIT %s"
+        )
+        params.append(top_n)
+        rows = self.db.execute_query(q, tuple(params))
+        return [
+            {
+                'categoria': r['categoria'],
+                'total': float(r['total'] or 0),
+                'transacciones': int(r['n'] or 0),
+            }
+            for r in rows
+        ]
+
+    def get_monthly_summary(
+        self,
+        entity_type: str,
+        entity_id: str | None,
+        month: int | None,
+        year: int | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+    ) -> Dict[str, Any]:
+        """Resumen de ingresos, gastos y balance del periodo, y comparación con periodo previo del mismo tamaño."""
+        # Determinar ventana
+        if start_date and end_date:
+            window_days = (end_date - start_date).days + 1
+            prev_start = start_date - timedelta(days=window_days)
+            prev_end = start_date - timedelta(days=1)
+        else:
+            # Si se pasa mes/año, usar el mes calendario
+            if not (month and year):
+                today = datetime.now()
+                month = today.month
+                year = today.year
+            start_date = datetime(year, month, 1)
+            # fin de mes
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = datetime(year, month + 1, 1) - timedelta(days=1)
+            prev_end = start_date - timedelta(days=1)
+            prev_start = (start_date - timedelta(days=(end_date - start_date).days + 1))
+
+        def sum_by_type(tipo: str, a: datetime, b: datetime) -> float:
+            where = ["tipo = %s"]
+            params: list[Any] = [tipo]
+            if entity_type == 'company' and entity_id:
+                where.append("empresa_id = %s")
+                params.append(entity_id)
+            elif entity_type == 'personal' and entity_id:
+                where.append("usuario_id = %s")
+                params.append(entity_id)
+            where.append("fecha >= %s")
+            where.append("fecha <= %s")
+            params.extend([a, b])
+            q = (
+                "SELECT SUM(monto) AS total FROM finanzas_empresa WHERE "
+                + " AND ".join(where)
+            )
+            res = self.db.execute_query(q, tuple(params))
+            return float(res[0]['total'] or 0) if res else 0.0
+
+        ingresos = sum_by_type('ingreso', start_date, end_date)
+        gastos = sum_by_type('gasto', start_date, end_date)
+        balance = ingresos - gastos
+
+        prev_ingresos = sum_by_type('ingreso', prev_start, prev_end)
+        prev_gastos = sum_by_type('gasto', prev_start, prev_end)
+        prev_balance = prev_ingresos - prev_gastos
+
+        def var_pct(curr: float, prev: float) -> float:
+            return round(((curr - prev) / prev * 100) if prev else (100.0 if curr > 0 else 0.0), 2)
+
+        return {
+            'periodo': {
+                'inicio': start_date.date().isoformat(),
+                'fin': end_date.date().isoformat(),
+            },
+            'ingresos': round(ingresos, 2),
+            'gastos': round(gastos, 2),
+            'balance': round(balance, 2),
+            'variacion_vs_anterior': {
+                'ingresos_pct': var_pct(ingresos, prev_ingresos),
+                'gastos_pct': var_pct(gastos, prev_gastos),
+                'balance_pct': var_pct(balance, prev_balance),
+            },
+        }
+
+    def get_recent_burn_rate(
+        self,
+        entity_type: str,
+        entity_id: str | None,
+        months: int = 3,
+    ) -> Tuple[float, float]:
+        """Retorna (avg_monthly_expenses, avg_monthly_income) de últimos N meses."""
+        where = []
+        params: list[Any] = []
+        if entity_type == 'company' and entity_id:
+            where.append("empresa_id = %s")
+            params.append(entity_id)
+        elif entity_type == 'personal' and entity_id:
+            where.append("usuario_id = %s")
+            params.append(entity_id)
+        where_clause = (" WHERE " + " AND ".join(where)) if where else ""
+        # Gastos por mes últimos N
+        q = (
+            "SELECT DATE_FORMAT(fecha, '%Y-%m-01') AS mes, "
+            "SUM(CASE WHEN tipo='gasto' THEN monto ELSE 0 END) AS gastos, "
+            "SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END) AS ingresos "
+            "FROM finanzas_empresa"
+            f"{where_clause} "
+            "GROUP BY mes ORDER BY mes DESC LIMIT %s"
+        )
+        params2 = params + [months]
+        rows = self.db.execute_query(q, tuple(params2))
+        if not rows:
+            return 0.0, 0.0
+        avg_exp = sum(float(r['gastos'] or 0) for r in rows) / len(rows)
+        avg_inc = sum(float(r['ingresos'] or 0) for r in rows) / len(rows)
+        return avg_exp, avg_inc
+
+    def get_monthly_totals_by_category(
+        self,
+        entity_type: str,
+        entity_id: str | None,
+        category: str,
+        months_back: int = 12,
+    ) -> List[Dict[str, Any]]:
+        """Devuelve totales mensuales históricos para una categoría, últimos N meses."""
+        where = ["categoria = %s"]
+        params: list[Any] = [category]
+        if entity_type == 'company' and entity_id:
+            where.append("empresa_id = %s")
+            params.append(entity_id)
+        elif entity_type == 'personal' and entity_id:
+            where.append("usuario_id = %s")
+            params.append(entity_id)
+        q = (
+            "SELECT DATE_FORMAT(fecha, '%Y-%m-01') AS mes, SUM(monto) AS total "
+            "FROM finanzas_empresa WHERE tipo = 'gasto' AND " + " AND ".join(where) + " "
+            "GROUP BY mes ORDER BY mes DESC LIMIT %s"
+        )
+        params.append(months_back)
+        rows = self.db.execute_query(q, tuple(params))
+        # Devolver en orden cronológico ascendente
+        return [
+            {
+                'mes': r['mes'],
+                'total': float(r['total'] or 0),
+            }
+            for r in reversed(rows)
+        ]
+
+    def detect_recurring_payments(
+        self,
+        user_id: str,
+        months_back: int = 12,
+        min_occurrences: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """Heurística simple de pagos recurrentes por 'contraparte' o 'descripcion'."""
+        # Tomar últimos N meses para el usuario personal
+        q = (
+            "SELECT contraparte, descripcion, DATE_FORMAT(fecha, '%Y-%m') AS ym, "
+            "ROUND(AVG(monto), 2) AS avg_monto, COUNT(*) AS n "
+            "FROM finanzas_empresa "
+            "WHERE usuario_id = %s AND tipo='gasto' "
+            "GROUP BY contraparte, descripcion, ym"
+        )
+        rows = self.db.execute_query(q, (user_id,))
+        # Agregar por contraparte/descripcion y contar meses únicos
+        from collections import defaultdict
+        groups = defaultdict(lambda: {'months': set(), 'sum_monto': 0.0, 'count': 0})
+        for r in rows:
+            key = r.get('contraparte') or r.get('descripcion') or 'N/A'
+            ym = r['ym']
+            groups[key]['months'].add(ym)
+            groups[key]['sum_monto'] += float(r['avg_monto'] or 0)
+            groups[key]['count'] += 1
+        result = []
+        for key, g in groups.items():
+            occ = len(g['months'])
+            if occ >= min_occurrences:
+                avg_monthly = g['sum_monto'] / occ
+                result.append({
+                    'comercio': key,
+                    'ocurrencias_mensuales': occ,
+                    'costo_mensual_estimado': round(avg_monthly, 2),
+                })
+        # Ordenar por costo
+        result.sort(key=lambda x: x['costo_mensual_estimado'], reverse=True)
+        return result
     
     def get_company_balance(self, company_id: Optional[str] = None) -> Dict[str, Any]:
         """

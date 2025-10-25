@@ -37,7 +37,16 @@ from tools import (
     assess_financial_risk_tool,
     get_alerts_tool,
     predict_cash_shortage_tool,
-    get_stress_test_tool
+    get_stress_test_tool,
+    list_transactions_tool,
+    top_categories_tool,
+    monthly_summary_tool,
+    cash_runway_tool,
+    forecast_expenses_by_category_tool,
+    bill_forecaster_tool,
+    goal_based_plan_tool,
+    budget_allocator_tool,
+    debt_paydown_optimizer_tool,
 )
 from utils import setup_logger
 
@@ -430,6 +439,157 @@ async def list_tools() -> list[Tool]:
                 },
             },
         ),
+        Tool(
+            name="list_transactions",
+            description=(
+                "Lista transacciones con filtros por fecha, categoría, monto y tipo, con paginación."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "company"},
+                    "entity_id": {"type": "string"},
+                    "start_date": {"type": "string", "description": "YYYY-MM-DD"},
+                    "end_date": {"type": "string", "description": "YYYY-MM-DD"},
+                    "category": {"type": "string"},
+                    "min_amount": {"type": "number"},
+                    "max_amount": {"type": "number"},
+                    "type": {"type": "string", "enum": ["ingreso", "gasto"]},
+                    "limit": {"type": "integer", "default": 50},
+                    "offset": {"type": "integer", "default": 0},
+                },
+            },
+        ),
+        Tool(
+            name="top_categories",
+            description=(
+                "Top-N categorías por gasto/ingreso en un período con porcentajes."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "company"},
+                    "entity_id": {"type": "string"},
+                    "start_date": {"type": "string"},
+                    "end_date": {"type": "string"},
+                    "direction": {"type": "string", "enum": ["gasto", "ingreso"], "default": "gasto"},
+                    "top_n": {"type": "integer", "default": 5},
+                },
+            },
+        ),
+        Tool(
+            name="monthly_summary",
+            description=(
+                "Resumen de ingresos, gastos y balance del mes o periodo dado con variación vs anterior."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "company"},
+                    "entity_id": {"type": "string"},
+                    "month": {"type": "integer"},
+                    "year": {"type": "integer"},
+                    "start_date": {"type": "string"},
+                    "end_date": {"type": "string"},
+                },
+            },
+        ),
+        Tool(
+            name="cash_runway",
+            description=(
+                "Estimación de meses de runway de caja con burn rate promedio reciente."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "company"},
+                    "entity_id": {"type": "string"},
+                    "current_cash": {"type": "number"},
+                    "burn_method": {"type": "string", "default": "avg_3m"},
+                },
+            },
+        ),
+        Tool(
+            name="forecast_expenses_by_category",
+            description=(
+                "Pronóstico simple (SMA/EMA) de gastos por categoría próximos meses."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "company"},
+                    "entity_id": {"type": "string"},
+                    "category": {"type": "string"},
+                    "months_ahead": {"type": "integer", "default": 6},
+                    "method": {"type": "string", "enum": ["sma", "ema"], "default": "sma"},
+                },
+                "required": ["category"],
+            },
+        ),
+        Tool(
+            name="bill_forecaster",
+            description=(
+                "Predicción de facturas/suscripciones personales basadas en recurrencias."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"},
+                    "months_ahead": {"type": "integer", "default": 3},
+                },
+                "required": ["user_id"],
+            },
+        ),
+        Tool(
+            name="goal_based_plan",
+            description=(
+                "Plan para alcanzar objetivo de ahorro/inversión con aportes mensuales y recortes sugeridos."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "personal"},
+                    "entity_id": {"type": "string"},
+                    "goal_amount": {"type": "number"},
+                    "deadline": {"type": "string", "description": "YYYY-MM-DD"},
+                    "min_monthly_contrib": {"type": "number"},
+                },
+                "required": ["goal_amount", "deadline"],
+            },
+        ),
+        Tool(
+            name="budget_allocator",
+            description=(
+                "Asigna presupuesto mensual por categoría en base a historial y prioridades."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "personal"},
+                    "entity_id": {"type": "string"},
+                    "monthly_cap": {"type": "number"},
+                    "prioridades": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["monthly_cap"],
+            },
+        ),
+        Tool(
+            name="debt_paydown_optimizer",
+            description=(
+                "Optimiza el pago de deudas (avalancha/bola de nieve) con cronograma y ahorro de intereses."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {"type": "string", "default": "personal"},
+                    "entity_id": {"type": "string"},
+                    "debts": {"type": "array", "items": {"type": "object"}},
+                    "metodo": {"type": "string", "enum": ["avalancha", "bola_nieve"], "default": "avalancha"},
+                    "extra_mensual": {"type": "number", "default": 0},
+                },
+                "required": ["debts"],
+            },
+        ),
     ]
 
 
@@ -544,7 +704,82 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageCo
                 income_reduction=arguments.get("income_reduction", 30.0),
                 expense_increase=arguments.get("expense_increase", 20.0)
             )
-        
+
+        elif name == "list_transactions":
+            result = list_transactions_tool(
+                entity_type=arguments.get("entity_type", "company"),
+                entity_id=arguments.get("entity_id"),
+                start_date=arguments.get("start_date"),
+                end_date=arguments.get("end_date"),
+                category=arguments.get("category"),
+                min_amount=arguments.get("min_amount"),
+                max_amount=arguments.get("max_amount"),
+                type=arguments.get("type"),
+                limit=arguments.get("limit", 50),
+                offset=arguments.get("offset", 0),
+            )
+        elif name == "top_categories":
+            result = top_categories_tool(
+                entity_type=arguments.get("entity_type", "company"),
+                entity_id=arguments.get("entity_id"),
+                start_date=arguments.get("start_date"),
+                end_date=arguments.get("end_date"),
+                direction=arguments.get("direction", "gasto"),
+                top_n=arguments.get("top_n", 5),
+            )
+        elif name == "monthly_summary":
+            result = monthly_summary_tool(
+                entity_type=arguments.get("entity_type", "company"),
+                entity_id=arguments.get("entity_id"),
+                month=arguments.get("month"),
+                year=arguments.get("year"),
+                start_date=arguments.get("start_date"),
+                end_date=arguments.get("end_date"),
+            )
+        elif name == "cash_runway":
+            result = cash_runway_tool(
+                entity_type=arguments.get("entity_type", "company"),
+                entity_id=arguments.get("entity_id"),
+                current_cash=arguments.get("current_cash"),
+                burn_method=arguments.get("burn_method", "avg_3m"),
+            )
+        elif name == "forecast_expenses_by_category":
+            result = forecast_expenses_by_category_tool(
+                entity_type=arguments.get("entity_type", "company"),
+                entity_id=arguments.get("entity_id"),
+                category=arguments.get("category"),
+                months_ahead=arguments.get("months_ahead", 6),
+                method=arguments.get("method", "sma"),
+            )
+        elif name == "bill_forecaster":
+            result = bill_forecaster_tool(
+                user_id=arguments.get("user_id"),
+                months_ahead=arguments.get("months_ahead", 3),
+            )
+        elif name == "goal_based_plan":
+            result = goal_based_plan_tool(
+                entity_type=arguments.get("entity_type", "personal"),
+                entity_id=arguments.get("entity_id"),
+                goal_amount=arguments.get("goal_amount"),
+                deadline=arguments.get("deadline"),
+                min_monthly_contrib=arguments.get("min_monthly_contrib"),
+            )
+        elif name == "budget_allocator":
+            result = budget_allocator_tool(
+                entity_type=arguments.get("entity_type", "personal"),
+                entity_id=arguments.get("entity_id"),
+                monthly_cap=arguments.get("monthly_cap"),
+                prioridades=arguments.get("prioridades"),
+            )
+        elif name == "debt_paydown_optimizer":
+            result = debt_paydown_optimizer_tool(
+                entity_type=arguments.get("entity_type", "personal"),
+                entity_id=arguments.get("entity_id"),
+                debts=arguments.get("debts"),
+                metodo=arguments.get("metodo", "avalancha"),
+                extra_mensual=arguments.get("extra_mensual", 0.0),
+            )
+
         else:
             raise ValueError(f"Herramienta desconocida: {name}")
         
