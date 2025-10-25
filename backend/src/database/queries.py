@@ -24,17 +24,18 @@ class FinancialDataQueries:
             Dictionary with income, expenses, and balance
         """
         try:
+            # Usar el nombre real de la tabla según los datos mostrados
             query = """
                 SELECT 
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
-                    SUM(CASE WHEN tipo_operacion = 'gasto' THEN monto ELSE 0 END) as total_gastos,
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE -monto END) as balance
-                FROM transacciones_empresa
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
+                    SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
+                FROM finanzas_empresa
             """
             
             params = None
             if company_id:
-                query += " WHERE id_empresa = %s"
+                query += " WHERE empresa_id = %s"
                 params = (company_id,)
             
             result = self.db.execute_query(query, params)
@@ -75,15 +76,15 @@ class FinancialDataQueries:
                     categoria,
                     SUM(monto) as total,
                     COUNT(*) as cantidad_transacciones
-                FROM transacciones_empresa
-                WHERE tipo_operacion = 'gasto'
+                FROM finanzas_empresa
+                WHERE tipo = 'gasto'
             """
             
             conditions = []
             params = []
             
             if company_id:
-                conditions.append("id_empresa = %s")
+                conditions.append("empresa_id = %s")
                 params.append(company_id)
             
             if start_date:
@@ -133,15 +134,15 @@ class FinancialDataQueries:
             # Get last 6 months average
             query = """
                 SELECT 
-                    AVG(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE 0 END) as avg_ingresos,
-                    AVG(CASE WHEN tipo_operacion = 'gasto' THEN monto ELSE 0 END) as avg_gastos
-                FROM transacciones_empresa
+                    AVG(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as avg_ingresos,
+                    AVG(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as avg_gastos
+                FROM finanzas_empresa
                 WHERE fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
             """
             
             params = None
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params = (company_id,)
             
             query += " GROUP BY MONTH(fecha)"
@@ -184,10 +185,10 @@ class FinancialDataQueries:
         try:
             query = """
                 SELECT 
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
-                    SUM(CASE WHEN tipo_operacion = 'gasto' THEN monto ELSE 0 END) as total_gastos,
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE -monto END) as balance
-                FROM transacciones_personales
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
+                    SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
+                FROM finanzas_personales
             """
             
             params = None
@@ -238,8 +239,8 @@ class FinancialDataQueries:
                 SELECT 
                     categoria,
                     SUM(monto) as gasto_real
-                FROM transacciones_empresa
-                WHERE tipo_operacion = 'gasto'
+                FROM finanzas_empresa
+                WHERE tipo = 'gasto'
                     AND MONTH(fecha) = %s
                     AND YEAR(fecha) = %s
             """
@@ -247,7 +248,7 @@ class FinancialDataQueries:
             params = [month, year]
             
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params.append(company_id)
             
             query += " GROUP BY categoria"
@@ -290,17 +291,17 @@ class FinancialDataQueries:
                 SELECT 
                     YEAR(fecha) as año,
                     MONTH(fecha) as mes,
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE 0 END) as ingresos,
-                    SUM(CASE WHEN tipo_operacion = 'gasto' THEN monto ELSE 0 END) as gastos,
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE -monto END) as balance
-                FROM transacciones_empresa
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
+                    SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
+                FROM finanzas_empresa
                 WHERE fecha >= DATE_SUB(NOW(), INTERVAL %s MONTH)
             """
             
             params = [months_back]
             
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params.append(company_id)
             
             query += " GROUP BY YEAR(fecha), MONTH(fecha) ORDER BY año, mes"
@@ -343,13 +344,13 @@ class FinancialDataQueries:
                 SELECT 
                     AVG(monto) as promedio,
                     STDDEV(monto) as desviacion_std
-                FROM transacciones_empresa
-                WHERE tipo_operacion = 'gasto'
+                FROM finanzas_empresa
+                WHERE tipo = 'gasto'
             """
             
             params = []
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params.append(company_id)
             
             stats = self.db.execute_query(query, tuple(params) if params else None)
@@ -367,15 +368,15 @@ class FinancialDataQueries:
                     concepto,
                     categoria,
                     monto
-                FROM transacciones_empresa
-                WHERE tipo_operacion = 'gasto'
+                FROM finanzas_empresa
+                WHERE tipo = 'gasto'
                     AND monto > %s
             """
             
             params = [avg + (threshold * std_dev)]
             
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params.append(company_id)
             
             query += " ORDER BY monto DESC LIMIT 10"
@@ -418,11 +419,11 @@ class FinancialDataQueries:
         try:
             query = """
                 SELECT 
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE 0 END) as ingresos,
-                    SUM(CASE WHEN tipo_operacion = 'gasto' THEN monto ELSE 0 END) as gastos,
-                    SUM(CASE WHEN tipo_operacion = 'ingreso' THEN monto ELSE -monto END) as balance,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
+                    SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance,
                     COUNT(*) as total_transacciones
-                FROM transacciones_empresa
+                FROM finanzas_empresa
                 WHERE 1=1
             """
             
@@ -437,7 +438,7 @@ class FinancialDataQueries:
                 params.append(end_date)
             
             if company_id:
-                query += " AND id_empresa = %s"
+                query += " AND empresa_id = %s"
                 params.append(company_id)
             
             result = self.db.execute_query(query, tuple(params) if params else None)
