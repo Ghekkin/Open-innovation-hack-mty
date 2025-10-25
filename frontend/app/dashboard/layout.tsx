@@ -24,10 +24,11 @@ import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const drawerWidth = 240;
 
-const theme = createTheme({
+const customTheme = createTheme({
   palette: {
     primary: {
       main: "#FF0000",
@@ -68,22 +69,35 @@ export default function DashboardLayout({
   };
 
   const drawer = (
-    <Box sx={{ mt: isMobile ? 2 : 8 }}>
+    <Box sx={{ mt: isMobile ? 2 : 0 }}>
+      {/* Logo solo para desktop */}
+      {!isMobile && (
+        <Box sx={{ display: "flex", justifyContent: "center", p: 3, bgcolor: "primary.main" }}>
+          <Image
+            src="/logo-banorte.png"
+            alt="Banorte Logo"
+            width={200}
+            height={100}
+            style={{ filter: "brightness(0) invert(1)" }} // Convertir logo a blanco
+            priority
+          />
+        </Box>
+      )}
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton onClick={() => handleNavigation(item.path)}>
-              <ListItemIcon sx={{ color: "primary.main" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} sx={{ color: "white" }} />
             </ListItemButton>
           </ListItem>
         ))}
         <ListItem disablePadding>
           <ListItemButton onClick={() => router.push("/")}>
-            <ListItemIcon sx={{ color: "primary.main" }}>
+            <ListItemIcon sx={{ color: "white" }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Logout" />
+            <ListItemText primary="Logout" sx={{ color: "white" }} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -91,7 +105,7 @@ export default function DashboardLayout({
   );
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={customTheme}>
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
         <AppBar
@@ -99,21 +113,20 @@ export default function DashboardLayout({
           sx={{
             width: { sm: `calc(100% - ${drawerWidth}px)` },
             ml: { sm: `${drawerWidth}px` },
-            bgcolor: "white",
+            bgcolor: "primary.main",
             boxShadow: 1,
           }}
         >
           <Toolbar>
             <IconButton
-              color="primary"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { sm: "none" } }}
+              sx={{ mr: 2, display: { sm: "none" }, color: "white" }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div" color="primary" fontWeight="bold">
+            <Typography variant="h6" noWrap component="div" sx={{ color: "white" }} fontWeight="bold">
               Dashboard
             </Typography>
           </Toolbar>
@@ -134,6 +147,7 @@ export default function DashboardLayout({
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
                 width: drawerWidth,
+                bgcolor: "primary.main",
                 borderRight: "1px solid rgba(0, 0, 0, 0.12)",
               },
             }}
