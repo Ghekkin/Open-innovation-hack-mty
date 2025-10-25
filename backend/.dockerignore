@@ -7,20 +7,26 @@ __pycache__/
 venv/
 env/
 ENV/
-*.egg-info/
+.venv
 
-# Environment
-.env
-.env.*
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
 
 # Git
 .git/
 .gitignore
-
-# IDE
-.vscode/
-.idea/
-*.swp
 
 # Documentation
 *.md
@@ -31,16 +37,17 @@ tests/
 test_*.py
 *_test.py
 
-# Logs
-logs/
-*.log
+# Development files
+.env
+.env.local
+.env.*.local
+*.bak
+*.tmp
 
-# OS
-.DS_Store
-Thumbs.db
+# Scripts de desarrollo
+start_server.bat
+start_server.ps1
+run_server.py
 
-# Build
-build/
-dist/
-*.egg-info/
-
+# Recursos
+recursos/
