@@ -42,7 +42,7 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
         logger.info(f"Query: {query}")
         logger.info(f"Params: {params}")
         
-        expenses_by_cat = db.execute_query(query, tuple(params), fetch='all')
+        expenses_by_cat = db.execute_query(query, tuple(params), fetch=True)
         
         logger.info(f"Resultados obtenidos: {len(expenses_by_cat) if expenses_by_cat else 0} categorías")
         
