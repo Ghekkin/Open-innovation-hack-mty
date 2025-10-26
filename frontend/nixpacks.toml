@@ -11,8 +11,7 @@ cmds = [
 cmds = [
   "npm run build",
   "npm prune --production",
-  "npm cache clean --force",
-  "rm -rf node_modules/.cache .next/cache"
+  "npm cache clean --force"
 ]
 
 [start]
