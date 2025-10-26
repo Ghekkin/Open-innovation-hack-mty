@@ -76,7 +76,7 @@ def budget_allocator_tool(
             FROM (
                 SELECT DATE_TRUNC('month', fecha) as month, categoria, SUM(monto) as monthly_total
                 FROM {table}
-                WHERE tipo = 'gasto' AND {id_column} = %s AND fecha >= NOW() - INTERVAL '3 months'
+                WHERE tipo = 'gasto' AND categoria != 'Ahorro' AND {id_column} = %s AND fecha >= NOW() - INTERVAL '3 months'
                 GROUP BY month, categoria
             ) as monthly_expenses
             GROUP BY categoria

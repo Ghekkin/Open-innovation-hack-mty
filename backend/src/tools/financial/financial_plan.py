@@ -86,12 +86,13 @@ def generate_financial_plan_tool(
                 else:
                     logger.warning(f"Expected dict but got {type(first)}: {first}")
             
-            # Obtener gastos por categoría
+            # Obtener gastos por categoría (excluyendo Ahorro)
             category_query = f"""
                 SELECT categoria, AVG(monto) as avg_amount, COUNT(*) as frequency
                 FROM {table}
                 WHERE {id_column} = %s 
                 AND tipo = 'gasto'
+                AND categoria != 'Ahorro'
                 AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
                 GROUP BY categoria
                 ORDER BY avg_amount DESC

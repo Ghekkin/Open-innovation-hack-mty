@@ -35,6 +35,7 @@ def get_expenses_by_category_tool(company_id: str = None, user_id: str = None, s
             SELECT categoria, SUM(monto) as total, COUNT(*) as cantidad
             FROM {table_name}
             WHERE tipo = 'gasto'
+            AND categoria != 'Ahorro'
             AND fecha >= %s
             AND fecha <= %s
         """

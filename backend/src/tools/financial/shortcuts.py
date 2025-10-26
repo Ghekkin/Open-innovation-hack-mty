@@ -24,7 +24,7 @@ def get_current_month_spending_summary(entity_type: str = "personal", entity_id:
         query = f"""
             SELECT SUM(monto) as total_gastado, COUNT(*) as numero_transacciones
             FROM {table}
-            WHERE tipo = 'gasto' AND fecha BETWEEN %s AND %s
+            WHERE tipo = 'gasto' AND categoria != 'Ahorro' AND fecha BETWEEN %s AND %s
         """
         params = [start_of_month, end_of_month]
 

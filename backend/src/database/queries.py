@@ -380,6 +380,7 @@ class FinancialDataQueries:
                     COUNT(*) as cantidad_transacciones
                 FROM finanzas_empresa
                 WHERE tipo = 'gasto'
+                AND categoria != 'Ahorro'
             """
             
             conditions = []
