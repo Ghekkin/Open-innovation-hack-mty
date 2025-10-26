@@ -27,6 +27,7 @@ from tools.financial.analytics import (
 from tools.financial.predictive import predict_cash_shortage_tool
 from tools.financial.financial_plan import generate_financial_plan_tool
 from tools.financial.shortcuts import get_current_month_spending_summary
+from tools.financial.investment import get_investment_recommendations_tool
 from utils import setup_logger
 
 # Setup logger
@@ -95,6 +96,7 @@ def get_personal_balance(user_id: Optional[str] = None) -> dict:
 @mcp.tool()
 def analyze_expenses_by_category(
     company_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ) -> dict:
@@ -106,15 +108,17 @@ def analyze_expenses_by_category(
     
     Args:
         company_id: ID de la empresa (opcional)
+        user_id: ID del usuario para finanzas personales (opcional)
         start_date: Fecha de inicio en formato YYYY-MM-DD (opcional)
         end_date: Fecha de fin en formato YYYY-MM-DD (opcional)
     
     Returns:
         Diccionario con categorías, totales y porcentajes de gasto
     """
-    logger.info(f"Ejecutando analyze_expenses_by_category: company={company_id}, dates={start_date} to {end_date}")
+    logger.info(f"Ejecutando analyze_expenses_by_category: company={company_id}, user={user_id}, dates={start_date} to {end_date}")
     return get_expenses_by_category_tool(
         company_id=company_id,
+        user_id=user_id,
         start_date=start_date,
         end_date=end_date
     )
@@ -464,6 +468,42 @@ def generate_financial_plan(
         additional_incomes=additional_incomes or [],
         additional_expenses=additional_expenses or [],
         planning_horizon_months=planning_horizon_months
+    )
+
+
+# ==================== RECOMENDACIONES DE INVERSIÓN ====================
+
+@mcp.tool()
+def get_investment_recommendations(
+    entity_type: str = "personal",
+    entity_id: Optional[str] = None,
+    investment_amount: Optional[float] = None,
+    risk_tolerance: str = "moderate",
+    investment_horizon: int = 12
+) -> dict:
+    """
+    Genera recomendaciones personalizadas de inversión en fondos.
+    
+    Analiza tu perfil financiero y sugiere fondos de inversión específicos,
+    estrategias de diversificación y proyecciones de rendimiento.
+    
+    Args:
+        entity_type: Tipo de entidad ("personal" o "company")
+        entity_id: ID de la entidad
+        investment_amount: Monto a invertir (opcional, se calcula automáticamente)
+        risk_tolerance: Tolerancia al riesgo ("conservative", "moderate", "aggressive")
+        investment_horizon: Horizonte de inversión en meses (default: 12)
+    
+    Returns:
+        Recomendaciones de fondos, estrategia de diversificación y proyecciones
+    """
+    logger.info(f"Ejecutando get_investment_recommendations: entity={entity_type}/{entity_id}, amount={investment_amount}, risk={risk_tolerance}")
+    return get_investment_recommendations_tool(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        investment_amount=investment_amount,
+        risk_tolerance=risk_tolerance,
+        investment_horizon=investment_horizon
     )
 
 
