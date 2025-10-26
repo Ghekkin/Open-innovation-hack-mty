@@ -1,0 +1,20 @@
+# Coolify Configuration
+# Deshabilitar push al registry para deployment local
+
+build:
+  # Usar Dockerfile
+  buildpack: dockerfile
+  
+  # No hacer push al registry
+  push: false
+  
+  # Mantener imagen local
+  local: true
+
+# Configuración del contenedor
+deploy:
+  port: 3000
+  
+  # No usar registry externo
+  registry:
+    enabled: false

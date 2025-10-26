@@ -108,27 +108,14 @@ export default function FinancialPlanResultPage() {
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("financialPlan");
-    console.log("[Resultado] Plan raw desde localStorage (primeros 500 chars):", storedPlan?.substring(0, 500));
     
     if (storedPlan) {
       try {
         const parsedPlan = JSON.parse(storedPlan);
-        console.log("[Resultado] Plan parseado completo:", parsedPlan);
-        console.log("[Resultado] success:", parsedPlan?.success);
-        console.log("[Resultado] plan_id:", parsedPlan?.plan_id);
-        console.log("[Resultado] current_situation:", parsedPlan?.current_situation);
-        console.log("[Resultado] current_balance:", parsedPlan?.current_situation?.current_balance);
-        console.log("[Resultado] monthly_income:", parsedPlan?.current_situation?.monthly_income);
-        console.log("[Resultado] monthly_expense:", parsedPlan?.current_situation?.monthly_expense);
-        console.log("[Resultado] metrics:", parsedPlan?.metrics);
-        console.log("[Resultado] projections length:", parsedPlan?.projections?.length);
-        console.log("[Resultado] projections:", parsedPlan?.projections);
         setPlan(parsedPlan);
       } catch (error) {
         console.error("Error al parsear el plan:", error);
       }
-    } else {
-      console.log("[Resultado] No hay plan en localStorage");
     }
     setLoading(false);
   }, []);

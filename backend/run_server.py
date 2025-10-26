@@ -34,7 +34,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n\nServidor detenido por el usuario.")
     except Exception as e:
-        print(f"\n❌ Error al iniciar el servidor: {e}")
+        print(f"\nError al iniciar el servidor: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

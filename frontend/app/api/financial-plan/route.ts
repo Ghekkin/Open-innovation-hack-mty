@@ -145,12 +145,6 @@ export async function POST(request: NextRequest) {
     const userType = userInfo?.type || 'personal';
     const userId = userInfo?.userId || '';
 
-    console.log('[Financial Plan API] URL del servidor MCP:', MCP_SERVER_URL);
-    console.log('[Financial Plan API] Variables de entorno disponibles:', {
-      MCP_SERVER_URL: process.env.MCP_SERVER_URL,
-      NODE_ENV: process.env.NODE_ENV
-    });
-
     // Preparar datos para el MCP
     const use_saved_data = planOption === 'saved';
     
@@ -173,13 +167,6 @@ export async function POST(request: NextRequest) {
       is_indefinite: expense.isIndefinite
     })) || [];
 
-    console.log('[Financial Plan API] Generando plan financiero...');
-    console.log('[Financial Plan API] Usuario:', userId, 'Tipo:', userType);
-    console.log('[Financial Plan API] Meta:', planGoal);
-    console.log('[Financial Plan API] Usar datos guardados:', use_saved_data);
-    console.log('[Financial Plan API] Ingresos adicionales:', additional_incomes.length);
-    console.log('[Financial Plan API] Gastos adicionales:', additional_expenses.length);
-
     // Llamar al MCP para generar el plan
     const planData = await generateFinancialPlanMCP({
       entity_type: userType,
@@ -190,8 +177,6 @@ export async function POST(request: NextRequest) {
       additional_expenses: additional_expenses,
       planning_horizon_months: 12
     });
-
-    console.log('[Financial Plan API] Plan generado exitosamente');
 
     return NextResponse.json({
       success: true,

@@ -84,8 +84,6 @@ export default function AsistentePage() {
       const history = loadChatHistory(user.userId);
       
       if (history.length > 0) {
-        // Si hay historial, usarlo
-        console.log(`[Asistente] Historial cargado: ${history.length} mensajes`);
         setMessages(history);
       } else {
         // Si no hay historial, crear mensaje de bienvenida
@@ -106,10 +104,8 @@ export default function AsistentePage() {
 
   // Guardar automáticamente el historial cada vez que cambian los mensajes
   useEffect(() => {
-    // Solo guardar después de que el historial inicial se haya cargado
     if (historyLoaded && userId && messages.length > 0) {
       saveChatHistory(userId, messages);
-      console.log(`[Asistente] Historial guardado: ${messages.length} mensajes`);
     }
   }, [messages, userId, historyLoaded]);
 
@@ -185,8 +181,6 @@ export default function AsistentePage() {
 
   // Función para enviar mensaje y obtener respuesta (usada en modo llamada)
   const sendMessageAndGetResponse = async (messageText: string) => {
-    console.log('[Llamada] Enviando mensaje:', messageText);
-    
     const userMessage: Message = {
       id: Date.now().toString(),
       content: messageText,
@@ -205,7 +199,6 @@ export default function AsistentePage() {
         content: msg.content
       }));
       
-      console.log('[Llamada] Haciendo fetch a API...');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -223,7 +216,6 @@ export default function AsistentePage() {
       });
 
       const data = await response.json();
-      console.log('[Llamada] Respuesta recibida:', data.response?.substring(0, 50) + '...');
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -237,28 +229,18 @@ export default function AsistentePage() {
       setIsLoading(false);
       
       // Reproducir la respuesta automáticamente con audio
-      console.log('[Llamada] Reproduciendo audio de respuesta...');
-      
-      // No usar await aquí para no bloquear
       playMessageAudioDirect(assistantMessage.content)
         .then(() => {
-          console.log('[Llamada] Audio completado exitosamente');
-          // Pequeño delay antes de reiniciar la escucha
           setTimeout(() => {
             if (isInCallRef.current) {
-              console.log('[Llamada] Reiniciando escucha automáticamente...');
               startConversationListening();
-            } else {
-              console.log('[Llamada] No se reinicia escucha - llamada terminada');
             }
           }, 300);
         })
         .catch((audioError) => {
-          console.error('[Llamada] Error al reproducir audio:', audioError);
-          // Incluso si falla el audio, reiniciar la escucha
+          console.error('Error al reproducir audio:', audioError);
           setTimeout(() => {
             if (isInCallRef.current) {
-              console.log('[Llamada] Reiniciando escucha después de error de audio...');
               startConversationListening();
             }
           }, 500);
@@ -275,10 +257,8 @@ export default function AsistentePage() {
       setMessages(prev => [...prev, errorMessage]);
       setIsLoading(false);
       
-      // Reintentar escuchar incluso si hay error
       setTimeout(() => {
         if (isInCallRef.current) {
-          console.log('[Llamada] Reiniciando escucha después de error general...');
           startConversationListening();
         }
       }, 1000);
@@ -292,11 +272,9 @@ export default function AsistentePage() {
       return;
     }
 
-    console.log('[Conversación] Iniciando modo llamada');
     setIsInCall(true);
     isInCallRef.current = true;
     
-    // Pequeño delay para asegurar que el estado se actualice
     setTimeout(() => {
       startConversationListening();
     }, 100);
@@ -304,24 +282,19 @@ export default function AsistentePage() {
 
   // Función para iniciar la escucha en modo conversación
   const startConversationListening = () => {
-    // Verificar que aún estamos en llamada usando la ref
     if (!isInCallRef.current) {
-      console.log('[Escucha] No se inicia porque ya no estamos en llamada');
       return;
     }
     
-    // Si ya hay un recognition activo, detenerlo primero
     if (conversationRecognitionRef.current) {
-      console.log('[Escucha] Deteniendo reconocimiento anterior...');
       try {
         conversationRecognitionRef.current.stop();
       } catch (e) {
-        console.log('[Escucha] Error al detener reconocimiento anterior:', e);
+        // Error silencioso
       }
       conversationRecognitionRef.current = null;
     }
     
-    console.log('[Escucha] Iniciando nuevo reconocimiento de voz...');
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
@@ -331,40 +304,30 @@ export default function AsistentePage() {
     recognition.maxAlternatives = 1;
     
     recognition.onstart = () => {
-      console.log('[Escucha] Reconocimiento iniciado - Puedes hablar ahora');
       setIsListening(true);
     };
     
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
-      const confidence = event.results[0][0].confidence;
-      console.log('[Escucha] Usuario dijo:', transcript, '(confianza:', confidence, ')');
       setIsListening(false);
       
-      // Detener el reconocimiento inmediatamente
       recognition.stop();
       conversationRecognitionRef.current = null;
       
-      // Enviar el mensaje automáticamente (esto manejará el reinicio de la escucha)
       await sendMessageAndGetResponse(transcript);
     };
     
     recognition.onerror = (event: any) => {
-      console.error('[Escucha] Error en reconocimiento de voz:', event.error);
       setIsListening(false);
       conversationRecognitionRef.current = null;
       
-      // Solo reintentar si es un error recuperable y aún estamos en llamada
       if (isInCallRef.current && event.error !== 'aborted' && event.error !== 'no-speech') {
-        console.log('[Escucha] Reintentando en 1 segundo...');
         setTimeout(() => {
           if (isInCallRef.current) {
             startConversationListening();
           }
         }, 1000);
       } else if (event.error === 'no-speech' && isInCallRef.current) {
-        // Si no se detectó voz, reiniciar inmediatamente
-        console.log('[Escucha] No se detectó voz, reintentando...');
         setTimeout(() => {
           if (isInCallRef.current) {
             startConversationListening();
@@ -374,7 +337,6 @@ export default function AsistentePage() {
     };
     
     recognition.onend = () => {
-      console.log('[Escucha] Reconocimiento terminado');
       setIsListening(false);
     };
     
@@ -383,10 +345,8 @@ export default function AsistentePage() {
     try {
       recognition.start();
     } catch (e) {
-      console.error('[Escucha] Error al iniciar reconocimiento:', e);
       setIsListening(false);
       conversationRecognitionRef.current = null;
-      // Reintentar
       setTimeout(() => {
         if (isInCallRef.current) {
           startConversationListening();
@@ -397,7 +357,6 @@ export default function AsistentePage() {
 
   // Función para terminar el modo conversación
   const endConversation = () => {
-    console.log('[Conversación] Terminando modo llamada');
     setIsInCall(false);
     isInCallRef.current = false;
     setIsListening(false);
@@ -406,7 +365,7 @@ export default function AsistentePage() {
       try {
         conversationRecognitionRef.current.stop();
       } catch (e) {
-        console.log('[Conversación] Error al detener reconocimiento:', e);
+        // Error silencioso
       }
       conversationRecognitionRef.current = null;
     }
@@ -463,7 +422,6 @@ export default function AsistentePage() {
       let resolved = false;
       
       try {
-        console.log('[Audio] Limpiando texto para TTS...');
         const cleanText = text
           .replace(/<[^>]*>/g, '')
           .replace(/\*\*/g, '')
@@ -471,13 +429,9 @@ export default function AsistentePage() {
           .trim();
 
         if (!cleanText) {
-          console.log('[Audio] Texto vacío, omitiendo reproducción');
           resolve();
           return;
         }
-
-        console.log('[Audio] Texto limpio:', cleanText.substring(0, 100) + '...');
-        console.log('[Audio] Llamando a ElevenLabs API...');
         
         const response = await fetch(
           `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
@@ -500,25 +454,14 @@ export default function AsistentePage() {
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[Audio] Error de API:', response.status, errorText);
           throw new Error(`Error al generar audio: ${response.status}`);
         }
 
-        console.log('[Audio] Audio recibido de ElevenLabs, creando blob...');
         const audioBlob = await response.blob();
-        console.log('[Audio] Blob size:', audioBlob.size, 'bytes');
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
-        console.log('[Audio] Configurando eventos del audio...');
-        
-        audio.onloadeddata = () => {
-          console.log('[Audio] Audio cargado, duración:', audio.duration, 'segundos');
-        };
-        
         audio.onended = () => {
-          console.log('[Audio] Evento onended disparado - Audio terminado');
           if (!resolved) {
             resolved = true;
             URL.revokeObjectURL(audioUrl);
@@ -528,7 +471,6 @@ export default function AsistentePage() {
         };
         
         audio.onerror = (e) => {
-          console.error('[Audio] Error al reproducir:', e);
           if (!resolved) {
             resolved = true;
             URL.revokeObjectURL(audioUrl);
@@ -537,12 +479,8 @@ export default function AsistentePage() {
           }
         };
         
-        // Fallback: si el evento onended no se dispara por alguna razón
         audio.onpause = () => {
-          console.log('[Audio] Audio pausado');
-          // Si el audio termina naturalmente (currentTime === duration), resolver
           if (audio.ended && !resolved) {
-            console.log('[Audio] Audio terminado (detectado en onpause)');
             resolved = true;
             URL.revokeObjectURL(audioUrl);
             currentAudioRef.current = null;
@@ -551,13 +489,10 @@ export default function AsistentePage() {
         };
         
         currentAudioRef.current = audio;
-        console.log('[Audio] Iniciando reproducción...');
         
         try {
           await audio.play();
-          console.log('[Audio] Reproducción iniciada exitosamente, esperando que termine...');
         } catch (playError) {
-          console.error('[Audio] Error en play():', playError);
           if (!resolved) {
             resolved = true;
             reject(playError);
@@ -565,7 +500,6 @@ export default function AsistentePage() {
         }
         
       } catch (error) {
-        console.error('[Audio] Error general:', error);
         if (!resolved) {
           resolved = true;
           reject(error);

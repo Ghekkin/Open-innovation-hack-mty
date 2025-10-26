@@ -12,22 +12,22 @@ def get_financial_health_score_tool(company_id: str = None, user_id: str = None)
         db = get_db_connection()
         
         if company_id:
-            table = "transacciones"
+            table = "finanzas_empresa"
             id_col = "empresa_id"
             entity_id = company_id
         elif user_id:
-            table = "transacciones_personales"
-            id_col = "usuario_id"
+            table = "finanzas_personales"
+            id_col = "id_usuario"
             entity_id = user_id
         else: # Global
-            table = "transacciones"
+            table = "finanzas_empresa"
             id_col = None
             entity_id = None
 
         query = f"""
             SELECT 
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END),
-                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END)
+                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_income,
+                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_expense
             FROM {table}
         """
         params = []
@@ -35,9 +35,25 @@ def get_financial_health_score_tool(company_id: str = None, user_id: str = None)
             query += f" WHERE {id_col} = %s"
             params.append(entity_id)
             
-        total_income, total_expense = db.execute_query(query, tuple(params), fetch='one')
-        total_income = float(total_income or 0)
-        total_expense = float(total_expense or 0)
+        result = db.execute_query(query, tuple(params), fetch='one')
+        
+        # Manejar diferentes formatos de resultado
+        # Caso 1: Lista con un diccionario dentro [{'total_income': X, 'total_expense': Y}]
+        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            total_income = float(result[0].get('total_income') or 0)
+            total_expense = float(result[0].get('total_expense') or 0)
+        # Caso 2: Diccionario directo {'total_income': X, 'total_expense': Y}
+        elif isinstance(result, dict):
+            total_income = float(result.get('total_income') or 0)
+            total_expense = float(result.get('total_expense') or 0)
+        # Caso 3: Tupla o lista con dos valores (X, Y)
+        elif isinstance(result, (list, tuple)) and len(result) >= 2:
+            total_income = float(result[0] or 0)
+            total_expense = float(result[1] or 0)
+        else:
+            logger.warning(f"Formato de resultado inesperado: {type(result)} - {result}")
+            total_income = 0
+            total_expense = 0
         
         balance = total_income - total_expense
         
@@ -87,8 +103,8 @@ def assess_financial_risk_tool(company_id: str = None) -> dict:
             SELECT 
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as income,
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as expense
-            FROM transacciones
-            WHERE fecha >= NOW() - INTERVAL '6 months'
+            FROM finanzas_empresa
+            WHERE fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
         """
         params = []
         if company_id:
@@ -99,7 +115,7 @@ def assess_financial_risk_tool(company_id: str = None) -> dict:
         income = float(result[0] or 0)
         expense = float(result[1] or 0)
 
-        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM transacciones"
+        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM finanzas_empresa"
         balance_params = []
         if company_id:
             balance_query += " WHERE empresa_id = %s"
@@ -167,7 +183,7 @@ def get_alerts_tool(company_id: str = None, severity: str = None) -> dict:
         db = get_db_connection()
         alerts = []
 
-        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM transacciones"
+        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM finanzas_empresa"
         params = []
         if company_id:
             balance_query += " WHERE empresa_id = %s"
@@ -184,13 +200,13 @@ def get_alerts_tool(company_id: str = None, severity: str = None) -> dict:
         budget_comp_query = """
             WITH real_expenses AS (
                 SELECT categoria, SUM(monto) as actual
-                FROM transacciones
-                WHERE tipo = 'gasto' AND EXTRACT(MONTH FROM fecha) = EXTRACT(MONTH FROM NOW()) AND EXTRACT(YEAR FROM fecha) = EXTRACT(YEAR FROM NOW())
+                FROM finanzas_empresa
+                WHERE tipo = 'gasto' AND MONTH(fecha) = MONTH(NOW()) AND YEAR(fecha) = YEAR(NOW())
                 GROUP BY categoria
             ), budgeted_expenses AS (
                 SELECT categoria, monto_presupuestado as budgeted
                 FROM presupuestos
-                WHERE EXTRACT(MONTH FROM mes) = EXTRACT(MONTH FROM NOW()) AND EXTRACT(YEAR FROM mes) = EXTRACT(YEAR FROM NOW())
+                WHERE MONTH(mes) = MONTH(NOW()) AND YEAR(mes) = YEAR(NOW())
             )
             SELECT b.categoria, r.actual, b.budgeted
             FROM budgeted_expenses b JOIN real_expenses r ON b.categoria = r.categoria
@@ -224,26 +240,56 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
     try:
         db = get_db_connection()
         
-        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM transacciones"
+        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM finanzas_empresa"
         params = []
         if company_id:
             balance_query += " WHERE empresa_id = %s"
             params.append(company_id)
         current_balance = float(db.execute_query(balance_query, tuple(params), fetch='one')[0] or 0)
 
-        metrics_query = """
-            SELECT 
-                (SELECT COALESCE(AVG(monthly_total), 0) FROM (
-                    SELECT SUM(monto) as monthly_total FROM transacciones WHERE tipo = 'ingreso' {company_filter} AND fecha >= NOW() - INTERVAL '6 months' GROUP BY DATE_TRUNC('month', fecha)
-                ) as monthly_incomes) as avg_income,
-                (SELECT COALESCE(AVG(monthly_total), 0) FROM (
-                    SELECT SUM(monto) as monthly_total FROM transacciones WHERE tipo = 'gasto' {company_filter} AND fecha >= NOW() - INTERVAL '6 months' GROUP BY DATE_TRUNC('month', fecha)
-                ) as monthly_expenses) as avg_expense
-        """
-        company_filter = "AND empresa_id = %s" if company_id else ""
-        metrics_query = metrics_query.format(company_filter=company_filter)
-        
-        avg_income, avg_expense = db.execute_query(metrics_query, tuple(params) if company_id else (), fetch='one')
+        # Calcular promedios mensuales de los últimos 6 meses
+        if company_id:
+            income_query = """
+                SELECT AVG(monthly_total) FROM (
+                    SELECT SUM(monto) as monthly_total 
+                    FROM finanzas_empresa 
+                    WHERE tipo = 'ingreso' AND empresa_id = %s 
+                    AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                    GROUP BY YEAR(fecha), MONTH(fecha)
+                ) as monthly_incomes
+            """
+            expense_query = """
+                SELECT AVG(monthly_total) FROM (
+                    SELECT SUM(monto) as monthly_total 
+                    FROM finanzas_empresa 
+                    WHERE tipo = 'gasto' AND empresa_id = %s 
+                    AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                    GROUP BY YEAR(fecha), MONTH(fecha)
+                ) as monthly_expenses
+            """
+            avg_income = float(db.execute_query(income_query, (company_id,), fetch='one')[0] or 0)
+            avg_expense = float(db.execute_query(expense_query, (company_id,), fetch='one')[0] or 0)
+        else:
+            income_query = """
+                SELECT AVG(monthly_total) FROM (
+                    SELECT SUM(monto) as monthly_total 
+                    FROM finanzas_empresa 
+                    WHERE tipo = 'ingreso'
+                    AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                    GROUP BY YEAR(fecha), MONTH(fecha)
+                ) as monthly_incomes
+            """
+            expense_query = """
+                SELECT AVG(monthly_total) FROM (
+                    SELECT SUM(monto) as monthly_total 
+                    FROM finanzas_empresa 
+                    WHERE tipo = 'gasto'
+                    AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                    GROUP BY YEAR(fecha), MONTH(fecha)
+                ) as monthly_expenses
+            """
+            avg_income = float(db.execute_query(income_query, fetch='one')[0] or 0)
+            avg_expense = float(db.execute_query(expense_query, fetch='one')[0] or 0)
 
         stressed_income = float(avg_income) * (1 - income_reduction / 100)
         stressed_expense = float(avg_expense) * (1 + expense_increase / 100)

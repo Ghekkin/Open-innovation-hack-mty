@@ -313,8 +313,6 @@ export default function Home() {
               </Typography>
             </Box>
           </Paper>
-
-          {/* Info adicional */}
           <Typography
             variant="caption"
             sx={{
