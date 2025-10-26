@@ -1,4 +1,0 @@
----
-alwaysApply: true
----
-Siempre añade los requirimientos de python en requirements.txt
