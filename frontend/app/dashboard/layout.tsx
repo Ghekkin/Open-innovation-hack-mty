@@ -24,8 +24,11 @@ import HomeIcon from "@mui/icons-material/Home";
 import ChatIcon from "@mui/icons-material/Chat";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LogoutIcon from "@mui/icons-material/Logout";
+import BusinessIcon from "@mui/icons-material/Business";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { getCurrentUser, logout, formatUsername } from "@/lib/auth";
 
 const drawerWidth = 240;
 const collapsedDrawerWidth = 64;
@@ -61,10 +64,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [userType, setUserType] = useState<'empresa' | 'personal' | null>(null);
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setUsername(user.username);
+      setUserType(user.type);
+    }
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -81,11 +93,14 @@ export default function DashboardLayout({
     }
   };
 
-  const currentDrawerWidth = desktopCollapsed ? collapsedDrawerWidth : drawerWidth;
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   const drawer = (
-    <Box sx={{ mt: isMobile ? 2 : 0 }}>
-      {/* Logo solo para desktop - clickable con toggle */}
+    <Box sx={{ mt: isMobile ? 2 : 0, height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Logo solo para desktop */}
       {!isMobile && (
         <Tooltip title={desktopCollapsed ? "Haz clic para expandir" : "Haz clic para colapsar"} placement="right">
         <Box
@@ -118,13 +133,48 @@ export default function DashboardLayout({
           </Box>
         </Tooltip>
       )}
-      <List sx={{
-        pt: 0.25,
-        pb: 2,
-        "& .MuiListItem-root": {
-          mb: desktopCollapsed ? 1 : 0
-        }
-      }}>
+
+      {/* Información del usuario */}
+      {username && (
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: "rgba(255,255,255,0.1)", 
+          mx: 2, 
+          my: 2, 
+          borderRadius: 2,
+          border: "1px solid rgba(255,255,255,0.2)"
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Avatar sx={{ 
+              bgcolor: "white", 
+              color: "primary.main", 
+              width: 36, 
+              height: 36,
+              mr: 1.5
+            }}>
+              {userType === 'empresa' ? <BusinessIcon /> : <AccountCircleIcon />}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ color: "white", fontWeight: 600 }}>
+                {username}
+              </Typography>
+              <Chip
+                label={userType === 'empresa' ? 'Empresa' : 'Personal'}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.65rem",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  mt: 0.5
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      <List sx={{ flex: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <Tooltip title={desktopCollapsed ? item.text : ""} placement="right">
