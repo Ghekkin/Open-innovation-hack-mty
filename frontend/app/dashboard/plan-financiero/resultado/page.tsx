@@ -176,7 +176,8 @@ export default function FinancialPlanResultPage() {
     }).format(amount);
   };
 
-  const getGoalTypeLabel = (type: string) => {
+  const getGoalTypeLabel = (type?: string) => {
+    if (!type) return "General";
     const labels: { [key: string]: string } = {
       savings: "Ahorro",
       debt_payoff: "Pago de Deudas",
@@ -240,7 +241,7 @@ export default function FinancialPlanResultPage() {
               Tu Meta Financiera
             </Typography>
             <Chip
-              label={getGoalTypeLabel(plan.goal_analysis.type)}
+              label={getGoalTypeLabel(plan.goal_analysis?.type)}
               color="primary"
               size="small"
               sx={{ mt: 1 }}
@@ -248,19 +249,19 @@ export default function FinancialPlanResultPage() {
           </Box>
         </Box>
         <Typography variant="body1" sx={{ mb: 2, fontSize: "1.1rem" }}>
-          {plan.goal_analysis.description}
+          {plan.goal_analysis?.description || plan.goal}
         </Typography>
-        {plan.goal_analysis.target_amount && (
+        {plan.goal_analysis?.target_amount && (
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
             <Box>
               <Typography variant="body2" color="text.secondary">
                 Monto Objetivo
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
-                {formatCurrency(plan.goal_analysis.target_amount)}
+                {formatCurrency(plan.goal_analysis?.target_amount || 0)}
               </Typography>
             </Box>
-            {plan.goal_analysis.timeframe && (
+            {plan.goal_analysis?.timeframe && (
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Plazo
@@ -270,12 +271,12 @@ export default function FinancialPlanResultPage() {
                 </Typography>
               </Box>
             )}
-            {plan.metrics.months_to_goal !== null && (
+            {plan.metrics?.months_to_goal !== null && (
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Tiempo Estimado
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: plan.metrics.months_to_goal <= (plan.goal_analysis.timeframe || 0) ? "success.main" : "warning.main" }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: (plan.metrics?.months_to_goal || 0) <= (plan.goal_analysis?.timeframe || 0) ? "success.main" : "warning.main" }}>
                   {plan.metrics.months_to_goal} meses
                 </Typography>
               </Box>
