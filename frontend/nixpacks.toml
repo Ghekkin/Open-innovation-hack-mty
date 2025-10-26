@@ -1,13 +1,19 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "npm-10_x"]
-nixLibs = ["gcc-unwrapped"]
-nixOverlays = ["https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"]
+nixPkgs = ["nodejs_20"]
+aptPkgs = ["curl", "wget"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = [
+  "npm ci --prefer-offline --no-audit"
+]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "npm run build",
+  "npm prune --production",
+  "npm cache clean --force",
+  "rm -rf node_modules/.cache .next/cache"
+]
 
 [start]
 cmd = "npm run start"
