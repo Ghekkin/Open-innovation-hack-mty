@@ -1,0 +1,16 @@
+# Configuración para Coolify
+# Este archivo indica a Coolify cómo desplegar la aplicación
+
+# Tipo de aplicación
+type: docker
+
+# Puerto expuesto
+port: 80
+
+# Healthcheck
+healthcheck_path: /documentation.html
+
+# Variables de entorno (si son necesarias)
+# environment:
+#   - TZ=America/Mexico_City
+

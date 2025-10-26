@@ -1,0 +1,9 @@
+# Ignorar archivos innecesarios para la imagen Docker
+.git
+.gitignore
+*.md
+!PLANES_FINANCIEROS.md
+README.md
+.DS_Store
+Thumbs.db
+
