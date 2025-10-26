@@ -1,0 +1,24 @@
+# Coolify Configuration
+# Este archivo le dice a Coolify cómo deployar la aplicación
+
+version: "1.0"
+
+# Configuración del build
+build:
+  dockerfile: Dockerfile
+  context: .
+  
+# NO hacer push al registry
+registry:
+  enabled: false
+  
+# Configuración del contenedor
+container:
+  port: 3000
+  
+# Variables de entorno (se sobrescriben con las de Coolify UI)
+environment:
+  NODE_ENV: production
+  PORT: 3000
+  HOSTNAME: "0.0.0.0"
+
