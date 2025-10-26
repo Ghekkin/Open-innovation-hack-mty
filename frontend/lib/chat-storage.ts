@@ -28,12 +28,11 @@ export function saveChatHistory(userId: string, messages: ChatMessage[]): void {
     const key = getChatStorageKey(userId);
     const serializedMessages = messages.map(msg => ({
       ...msg,
-      timestamp: msg.timestamp.toISOString() // Convertir Date a string
+      timestamp: msg.timestamp.toISOString()
     }));
     localStorage.setItem(key, JSON.stringify(serializedMessages));
-    console.log(`[ChatStorage] Historial guardado para usuario ${userId}: ${messages.length} mensajes`);
   } catch (error) {
-    console.error("[ChatStorage] Error al guardar historial:", error);
+    console.error("Error al guardar historial:", error);
   }
 }
 
@@ -46,20 +45,18 @@ export function loadChatHistory(userId: string): ChatMessage[] {
     const stored = localStorage.getItem(key);
     
     if (!stored) {
-      console.log(`[ChatStorage] No hay historial para usuario ${userId}`);
       return [];
     }
     
     const parsed = JSON.parse(stored);
     const messages = parsed.map((msg: any) => ({
       ...msg,
-      timestamp: new Date(msg.timestamp) // Convertir string a Date
+      timestamp: new Date(msg.timestamp)
     }));
     
-    console.log(`[ChatStorage] Historial cargado para usuario ${userId}: ${messages.length} mensajes`);
     return messages;
   } catch (error) {
-    console.error("[ChatStorage] Error al cargar historial:", error);
+    console.error("Error al cargar historial:", error);
     return [];
   }
 }
@@ -71,9 +68,8 @@ export function clearChatHistory(userId: string): void {
   try {
     const key = getChatStorageKey(userId);
     localStorage.removeItem(key);
-    console.log(`[ChatStorage] Historial eliminado para usuario ${userId}`);
   } catch (error) {
-    console.error("[ChatStorage] Error al eliminar historial:", error);
+    console.error("Error al eliminar historial:", error);
   }
 }
 
@@ -88,10 +84,8 @@ export function clearAllChatHistories(): void {
     chatKeys.forEach(key => {
       localStorage.removeItem(key);
     });
-    
-    console.log(`[ChatStorage] Todos los historiales eliminados (${chatKeys.length} usuarios)`);
   } catch (error) {
-    console.error("[ChatStorage] Error al eliminar todos los historiales:", error);
+    console.error("Error al eliminar todos los historiales:", error);
   }
 }
 
@@ -109,9 +103,9 @@ export function getChatHistorySize(userId: string): number {
     const sizeInBytes = new Blob([stored]).size;
     const sizeInKB = sizeInBytes / 1024;
     
-    return Math.round(sizeInKB * 100) / 100; // Redondear a 2 decimales
+    return Math.round(sizeInKB * 100) / 100;
   } catch (error) {
-    console.error("[ChatStorage] Error al calcular tamaño:", error);
+    console.error("Error al calcular tamaño:", error);
     return 0;
   }
 }
@@ -130,17 +124,13 @@ export function hasStorageSpace(): boolean {
       }
     }
     
-    // localStorage típicamente tiene ~5MB = 5242880 bytes
-    // Alertar si está usando más del 80%
     const limitBytes = 5242880;
     const usagePercent = (totalSize / limitBytes) * 100;
     
-    console.log(`[ChatStorage] Uso de localStorage: ${usagePercent.toFixed(2)}%`);
-    
     return usagePercent < 80;
   } catch (error) {
-    console.error("[ChatStorage] Error al verificar espacio:", error);
-    return true; // Asumir que hay espacio en caso de error
+    console.error("Error al verificar espacio:", error);
+    return true;
   }
 }
 

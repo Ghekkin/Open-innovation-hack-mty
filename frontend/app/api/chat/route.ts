@@ -278,10 +278,6 @@ export async function POST(request: NextRequest) {
     const userType = userInfo?.type || 'desconocido';
     const userId = userInfo?.userId || '';
     
-    // Log del historial recibido
-    console.log(`[Chat] Historial de conversación: ${conversationHistory?.length || 0} mensajes`);
-
-    // Detectar todas las herramientas MCP necesarias (puede ser más de una)
     const mcpTools = detectMCPTools(message, userType);
     let allMcpData: any[] = [];
     let mcpContext = '';
@@ -297,7 +293,6 @@ export async function POST(request: NextRequest) {
       
       // Llamar a todas las herramientas detectadas
       for (const mcpTool of mcpTools) {
-        // Agregar el ID del usuario a los argumentos del MCP
         const mcpArgs = { ...mcpTool.args };
         if (userType === 'empresa') {
           mcpArgs.company_id = userId;
@@ -411,8 +406,6 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    } else {
-      console.log(`[Chat] No se detectaron herramientas MCP para el mensaje: "${message}"`);
     }
 
     // Construir contexto del usuario
@@ -552,8 +545,6 @@ Responde de manera profesional, clara, directa y en español.${userContext}${mcp
       role: 'user',
       parts: [{ text: message }]
     });
-    
-    console.log(`[Chat] Enviando ${geminiContents.length} mensajes a Gemini`);
     
     // Llamada a Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {

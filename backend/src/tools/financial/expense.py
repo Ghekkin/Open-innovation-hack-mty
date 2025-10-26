@@ -23,7 +23,6 @@ def get_expenses_by_category_tool(company_id: str = None, user_id: str = None, s
             start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d")
             end_date = (today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)).strftime("%Y-%m-%d")
 
-        # Determinar si es empresa o usuario personal
         is_personal = user_id is not None
         table_name = "finanzas_personales" if is_personal else "finanzas_empresa"
         id_column = "id_usuario" if is_personal else "empresa_id"
@@ -68,7 +67,6 @@ def get_expenses_by_category_tool(company_id: str = None, user_id: str = None, s
                 "message": "No hay gastos registrados para el período y empresa especificados."
             }
             
-        # Los resultados vienen como diccionarios con los alias definidos en el query
         total_expenses = sum(float(e['total']) for e in expenses_by_cat)
         
         categorias = [

@@ -449,7 +449,9 @@ export default function DashboardPage() {
                   sx={{
                     fontWeight: "bold",
                     mb: 0.5,
-                    fontSize: "1.5rem"
+                    fontSize: { xs: "1rem", sm: "1.2rem", md: "1.3rem" },
+                    wordBreak: "break-word",
+                    lineHeight: 1.2
                   }}
                 >
                   {balance && formatCurrency(balance.balance)}
@@ -489,7 +491,9 @@ export default function DashboardPage() {
                     fontWeight: "bold",
                     color: "#4CAF50",
                     mb: 0.5,
-                    fontSize: "1.5rem"
+                    fontSize: { xs: "1rem", sm: "1.2rem", md: "1.3rem" },
+                    wordBreak: "break-word",
+                    lineHeight: 1.2
                   }}
                 >
                   {balance && formatCurrency(balance.ingresos)}
@@ -522,7 +526,9 @@ export default function DashboardPage() {
                     fontWeight: "bold",
                     color: "#FF5722",
                     mb: 0.5,
-                    fontSize: "1.5rem"
+                    fontSize: { xs: "1rem", sm: "1.2rem", md: "1.3rem" },
+                    wordBreak: "break-word",
+                    lineHeight: 1.2
                   }}
                 >
                   {balance && formatCurrency(balance.gastos)}
@@ -566,8 +572,8 @@ export default function DashboardPage() {
                     data={expensesByCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={90}
+                    innerRadius={55}
+                    outerRadius={105}
                     paddingAngle={2}
                     dataKey="total"
                     nameKey="categoria"
