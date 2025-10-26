@@ -25,6 +25,7 @@ from tools.financial.analytics import (
     compare_periods_tool,
 )
 from tools.financial.predictive import predict_cash_shortage_tool
+from tools.financial.financial_plan import generate_financial_plan_tool
 from utils import setup_logger
 
 # Setup logger
@@ -420,6 +421,48 @@ def get_stress_test(
         company_id=company_id,
         income_reduction=income_reduction,
         expense_increase=expense_increase
+    )
+
+
+# ==================== PLANIFICACIÓN FINANCIERA ====================
+
+@mcp.tool()
+def generate_financial_plan(
+    entity_type: str = "personal",
+    entity_id: Optional[str] = None,
+    plan_goal: Optional[str] = None,
+    use_saved_data: bool = True,
+    additional_incomes: Optional[list] = None,
+    additional_expenses: Optional[list] = None,
+    planning_horizon_months: int = 12
+) -> dict:
+    """
+    Genera un plan financiero personalizado completo.
+    
+    Crea un plan detallado con proyecciones, recomendaciones y estrategias
+    basadas en datos históricos y metas específicas del usuario.
+    
+    Args:
+        entity_type: Tipo de entidad ("personal" o "company")
+        entity_id: ID de la entidad
+        plan_goal: Meta financiera del usuario (ej: "Ahorrar $10,000 en 6 meses")
+        use_saved_data: Si usar datos guardados en la base de datos
+        additional_incomes: Lista de ingresos adicionales a considerar
+        additional_expenses: Lista de gastos adicionales a considerar
+        planning_horizon_months: Horizonte de planificación en meses (default: 12)
+    
+    Returns:
+        Plan financiero completo con proyecciones, métricas, recomendaciones y estrategias
+    """
+    logger.info(f"Ejecutando generate_financial_plan: entity={entity_type}/{entity_id}, goal={plan_goal}")
+    return generate_financial_plan_tool(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        plan_goal=plan_goal,
+        use_saved_data=use_saved_data,
+        additional_incomes=additional_incomes or [],
+        additional_expenses=additional_expenses or [],
+        planning_horizon_months=planning_horizon_months
     )
 
 

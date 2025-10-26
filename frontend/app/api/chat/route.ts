@@ -162,6 +162,11 @@ function detectMCPTool(message: string): { tool: string; args: any } | null {
     return { tool: 'predict_cash_shortage', args: {} };
   }
 
+  // Plan financiero
+  if (lowerMessage.includes('plan') && (lowerMessage.includes('financiero') || lowerMessage.includes('ahorro') || lowerMessage.includes('meta'))) {
+    return { tool: 'generate_financial_plan', args: {} };
+  }
+
   return null;
 }
 
@@ -247,6 +252,7 @@ Tienes acceso a las siguientes herramientas financieras:
 - Detección de anomalías
 - Recomendaciones personalizadas
 - Alertas y predicciones
+- Generación de planes financieros personalizados
 
 IMPORTANTE: 
 - Si te proporcionan datos financieros reales (marcados como "DATOS FINANCIEROS REALES"), ÚSALOS en tu respuesta.
@@ -256,6 +262,8 @@ IMPORTANTE:
 - Si es una cuenta de empresa, enfócate en métricas empresariales (ROI, flujo de caja, etc.).
 - Si es una cuenta personal, enfócate en ahorro, presupuesto personal y metas financieras.
 - Si no hay datos disponibles, explica qué información necesitas.
+- Si el usuario pregunta sobre planes financieros, explícales que pueden crear uno detallado en la sección "Plan Financiero" del dashboard.
+- Si recibes datos de un plan financiero generado, presenta las recomendaciones clave de forma clara y motivadora.
 
 Responde de manera profesional, clara y en español.${userContext}${mcpContext}`;
 

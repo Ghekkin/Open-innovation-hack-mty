@@ -33,4 +33,5 @@ from .risk import (
     get_stress_test_tool,
 )
 from .orchestrator import get_financial_health_summary, get_business_health_check, get_personal_monthly_review, create_debt_reduction_plan
+from .financial_plan import generate_financial_plan_tool
 

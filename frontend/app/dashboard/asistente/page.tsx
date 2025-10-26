@@ -19,6 +19,11 @@ import {
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 import { getCurrentUser } from "@/lib/auth";
+import { 
+  saveChatHistory, 
+  loadChatHistory, 
+  type ChatMessage 
+} from "@/lib/chat-storage";
 
 interface Message {
   id: string;
@@ -31,31 +36,51 @@ interface Message {
 export default function AsistentePage() {
   const [inputValue, setInputValue] = useState("");
   const [username, setUsername] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "¡Hola! Soy Maya, tu asistente virtual de Banorte. Estoy aquí para ayudarte con todas tus consultas financieras, desde saldos hasta recomendaciones personalizadas. ¿En qué puedo ayudarte hoy?",
-      sender: "assistant",
-      timestamp: new Date()
-    }
-  ]);
+  const [userId, setUserId] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Inicializar con mensaje de bienvenida personalizado
+  // Cargar historial de conversación al montar el componente
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
       setUsername(user.username);
-      const welcomeMessage: Message = {
-        id: "1",
-        content: `¡Hola ${user.username}! Soy Maya, tu asistente financiera de Banorte. Puedo ayudarte con análisis de balance, gastos, proyecciones y recomendaciones financieras ${user.type === 'empresa' ? 'para tu empresa' : 'personales'}. ¿En qué puedo ayudarte hoy?`,
-        sender: "assistant",
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
+      setUserId(user.userId);
+      
+      // Intentar cargar historial previo
+      const history = loadChatHistory(user.userId);
+      
+      if (history.length > 0) {
+        // Si hay historial, usarlo
+        console.log(`[Asistente] Historial cargado: ${history.length} mensajes`);
+        setMessages(history);
+      } else {
+        // Si no hay historial, crear mensaje de bienvenida
+        const welcomeMessage: Message = {
+          id: "welcome_" + Date.now(),
+          content: `¡Hola ${user.username}! Soy Maya, tu asistente financiera de Banorte. Puedo ayudarte con análisis de balance, gastos, proyecciones y recomendaciones financieras ${user.type === 'empresa' ? 'para tu empresa' : 'personales'}. ¿En qué puedo ayudarte hoy?`,
+          sender: "assistant",
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+        // Guardar el mensaje de bienvenida
+        saveChatHistory(user.userId, [welcomeMessage]);
+      }
+      
+      setHistoryLoaded(true);
     }
   }, []);
+
+  // Guardar automáticamente el historial cada vez que cambian los mensajes
+  useEffect(() => {
+    // Solo guardar después de que el historial inicial se haya cargado
+    if (historyLoaded && userId && messages.length > 0) {
+      saveChatHistory(userId, messages);
+      console.log(`[Asistente] Historial guardado: ${messages.length} mensajes`);
+    }
+  }, [messages, userId, historyLoaded]);
 
   // Auto-scroll al final
   useEffect(() => {

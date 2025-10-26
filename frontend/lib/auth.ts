@@ -1,4 +1,5 @@
 // Utilidades de autenticación para el sistema Banorte
+import { clearChatHistory } from './chat-storage';
 
 export interface UserInfo {
   username: string;
@@ -77,16 +78,27 @@ export const getUserId = (): string | null => {
 };
 
 /**
- * Cierra la sesión del usuario
+ * Cierra la sesión del usuario y limpia el historial de chat
  */
 export const logout = (): void => {
   if (typeof window === 'undefined') return;
   
+  // Obtener el ID del usuario antes de borrar la sesión
+  const user = getCurrentUser();
+  if (user) {
+    // Limpiar el historial de conversación del usuario
+    clearChatHistory(user.userId);
+    console.log(`[Auth] Historial de chat eliminado para usuario: ${user.userId}`);
+  }
+  
+  // Limpiar datos de sesión
   localStorage.removeItem('banorte_user');
   localStorage.removeItem('banorte_username');
   localStorage.removeItem('banorte_user_type');
   localStorage.removeItem('banorte_user_id');
   localStorage.removeItem('banorte_login_time');
+  
+  console.log('[Auth] Sesión cerrada exitosamente');
 };
 
 /**

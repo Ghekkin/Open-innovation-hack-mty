@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -23,6 +24,7 @@ import {
   FormControl,
   Checkbox,
   FormGroup,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -38,6 +40,7 @@ interface FinancialEntry {
 }
 
 export default function FinancialPlanPage() {
+  const router = useRouter();
   const [planOption, setPlanOption] = useState<"saved" | "custom">("saved");
   const [customIncomes, setCustomIncomes] = useState<FinancialEntry[]>([]);
   const [customExpenses, setCustomExpenses] = useState<FinancialEntry[]>([]);
@@ -55,6 +58,7 @@ export default function FinancialPlanPage() {
   const [expenseIsIndefinite, setExpenseIsIndefinite] = useState(false);
   const [planGoal, setPlanGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddEntry = (type: "income" | "expense") => {
     setError(null);
@@ -128,6 +132,57 @@ export default function FinancialPlanPage() {
       setCustomIncomes((prev) => prev.filter((entry) => entry.id !== id));
     } else {
       setCustomExpenses((prev) => prev.filter((entry) => entry.id !== id));
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    setError(null);
+    
+    if (!planGoal.trim()) {
+      setError("Por favor, describe la meta de tu plan financiero.");
+      return;
+    }
+
+    if (planOption === "custom" && customIncomes.length === 0 && customExpenses.length === 0) {
+      setError("Si seleccionas 'Tomar en cuenta otros gastos e ingresos', debes agregar al menos un ingreso o gasto adicional.");
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      // Obtener información del usuario del localStorage
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+
+      const response = await fetch("/api/financial-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planOption,
+          customIncomes,
+          customExpenses,
+          planGoal,
+          userInfo,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Error al generar el plan financiero");
+      }
+
+      // Guardar el plan en localStorage y redirigir a la página de resultados
+      localStorage.setItem("financialPlan", JSON.stringify(data.plan));
+      router.push("/dashboard/plan-financiero/resultado");
+
+    } catch (err) {
+      console.error("Error al generar plan:", err);
+      setError(err instanceof Error ? err.message : "Error desconocido al generar el plan");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -475,9 +530,11 @@ export default function FinancialPlanPage() {
           variant="contained"
           sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" }, py: 1.5, fontSize: "1.1rem" }}
           fullWidth
-          // onClick={handleGeneratePlan} // Descomentar cuando la lógica del plan esté lista
+          onClick={handleGeneratePlan}
+          disabled={isGenerating}
+          startIcon={isGenerating ? <CircularProgress size={20} color="inherit" /> : null}
         >
-          Generar Plan Financiero
+          {isGenerating ? "Generando Plan..." : "Generar Plan Financiero"}
         </Button>
       </Paper>
     </Box>
