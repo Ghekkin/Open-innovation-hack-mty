@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Banorte - Asistente Virtual",
-  description: "Plataforma en línea de Banorte - Asistente Virtual con IA",
+  title: "Banorte - Maya Asistente Virtual",
+  description: "Plataforma en línea de Banorte - Conoce a Maya, tu asistente virtual con IA para todas tus consultas financieras",
   icons: {
     icon: "/Banorte.png",
     shortcut: "/Banorte.png",

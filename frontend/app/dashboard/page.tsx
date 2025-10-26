@@ -15,7 +15,7 @@ import {
   Alert
 } from "@mui/material";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
 } from "recharts";
 import {
   TrendingUp as TrendingUpIcon,
@@ -39,6 +39,7 @@ interface ExpenseCategory {
   total: number;
   transacciones: number;
   porcentaje: number;
+  [key: string]: string | number; // Make it compatible with Recharts
 }
 
 export default function DashboardPage() {
@@ -199,32 +200,32 @@ export default function DashboardPage() {
         <Paper
         elevation={3}
           sx={{
-          mb: { xs: 2, sm: 3 },
+          mb: { xs: 1.5, sm: 2 },
           background: "linear-gradient(135deg, #EC0029 0%, #C00020 100%)",
-          p: { xs: 2, sm: 3 },
-          borderRadius: 3
+          p: { xs: 1.5, sm: 2.5 },
+          borderRadius: 2
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", mr: 1.5, width: 40, height: 40 }}>
-            <AutoAwesomeIcon sx={{ color: "white" }} />
+        <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1.5, sm: 2 } }}>
+          <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", mr: { xs: 1, sm: 1.5 }, width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 } }}>
+            <AutoAwesomeIcon sx={{ color: "white", fontSize: { xs: 18, sm: 20 } }} />
           </Avatar>
           <Box>
           <Typography
             variant="h6"
-              sx={{ 
-                color: "white", 
+              sx={{
+                color: "white",
                 fontWeight: "bold",
-                fontSize: { xs: "1rem", sm: "1.25rem" }
+                fontSize: { xs: "0.95rem", sm: "1.25rem" }
               }}
             >
-              Asistente Financiero IA
-          </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
+              Maya - Tu Asistente Financiero IA
+      </Typography>
+            <Typography
+              variant="caption"
+        sx={{
                 color: "rgba(255,255,255,0.9)",
-                fontSize: { xs: "0.7rem", sm: "0.75rem" }
+                fontSize: { xs: "0.65rem", sm: "0.75rem" }
               }}
             >
               Pregunta sobre tus finanzas y obtén análisis instantáneos
@@ -234,29 +235,29 @@ export default function DashboardPage() {
 
         <form onSubmit={handleAiAnalysis}>
           <Box sx={{
-            display: "flex",
-            gap: { xs: 1, sm: 1.5 },
+          display: "flex",
+            gap: { xs: 0.8, sm: 1.5 },
             alignItems: "center",
             bgcolor: "white",
-            borderRadius: 3,
-            p: { xs: 0.5, sm: 1 }
+            borderRadius: 2,
+            p: { xs: 0.4, sm: 1 }
           }}>
             <TextField
               fullWidth
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ej: ¿Cómo puedo reducir mis gastos? ¿Cuál es mi categoría con más gastos?"
+              placeholder="Ej: ¿Cómo reducir mis gastos? ¿Categoría con más gastos?"
               disabled={isAnalyzing}
               variant="standard"
               InputProps={{
                 disableUnderline: true,
                 sx: {
-                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                  px: { xs: 1, sm: 1.5 },
+                  fontSize: { xs: "0.8rem", sm: "0.95rem" },
+                  px: { xs: 0.8, sm: 1.5 },
                   "& input::placeholder": {
                     color: "grey.500",
                     opacity: 1,
-                    fontSize: { xs: "0.85rem", sm: "0.95rem" }
+                    fontSize: { xs: "0.8rem", sm: "0.95rem" }
                   }
                 }
               }}
@@ -267,8 +268,8 @@ export default function DashboardPage() {
               sx={{
                 bgcolor: inputValue.trim() && !isAnalyzing ? "primary.main" : "grey.300",
                 color: "white",
-                width: { xs: 36, sm: 42 },
-                height: { xs: 36, sm: 42 },
+                width: { xs: 32, sm: 42 },
+                height: { xs: 32, sm: 42 },
                 "&:hover": {
                   bgcolor: inputValue.trim() && !isAnalyzing ? "primary.dark" : "grey.400",
                 },
@@ -281,7 +282,7 @@ export default function DashboardPage() {
               {isAnalyzing ? (
                 <CircularProgress size={20} sx={{ color: "grey.500" }} />
               ) : (
-                <SendIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                <SendIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
               )}
             </IconButton>
           </Box>
@@ -301,7 +302,7 @@ export default function DashboardPage() {
             }
           }}
         >
-          <Typography 
+          <Typography
             variant="subtitle2" 
             sx={{ 
               fontWeight: "bold", 
@@ -324,199 +325,268 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {/* Tarjetas de resumen */}
+      {/* Layout principal: Stats a la izquierda, Gráfico a la derecha */}
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, 1fr)",
-            md: "repeat(3, 1fr)"
+            xs: "1fr", // Mobile: una columna
+            sm: "repeat(2, 1fr)", // Tablet: dos columnas
+            lg: "1fr 1fr" // Desktop: dos columnas (stats + gráfico)
           },
-          gap: { xs: 1.5, sm: 2, md: 3 },
-          mb: { xs: 2, sm: 3, md: 4 }
+          gap: { xs: 2, sm: 3, lg: 4 },
+          mb: 4,
+          alignItems: "start"
         }}
       >
-        {/* Balance Total */}
-        <Card
-          elevation={2}
+        {/* Panel izquierdo: Estadísticas principales */}
+        <Box>
+          {/* Header con saludo - más compacto */}
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                color: "primary.main",
+                mb: 0.5,
+                fontSize: { xs: "1.5rem", sm: "2rem" }
+              }}
+            >
+              ¡Hola, {username || "Usuario"}! 👋
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "grey.500",
+                fontSize: { xs: "0.85rem", sm: "1rem" }
+              }}
+            >
+              Aquí está un resumen de tus finanzas
+            </Typography>
+          </Box>
+
+          {/* Tarjetas de resumen - más compactas */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(3, 1fr)"
+              },
+              gap: { xs: 1.5, sm: 2 },
+              mb: { xs: 3, lg: 0 }
+            }}
+          >
+            {/* Balance Total */}
+            <Card
+              elevation={2}
+              sx={{
+                background: "linear-gradient(135deg, #EC0029 0%, #C00020 100%)",
+                color: "white",
+                height: "100%"
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Avatar sx={{
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    mr: 1.5,
+                    width: 36,
+                    height: 36
+                  }}>
+                    <AccountBalanceIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+                    Balance Total
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 0.5,
+                    fontSize: "1.5rem"
+                  }}
+                >
+                  {balance && formatCurrency(balance.balance)}
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  {balance && balance.balance >= 0 ? (
+                    <TrendingUpIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ fontSize: 16 }} />
+                  )}
+                  <Typography variant="caption" sx={{ fontSize: "0.75rem" }}>
+                    {balance && balance.balance >= 0 ? "Positivo" : "Negativo"}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Ingresos */}
+            <Card elevation={2} sx={{ height: "100%" }}>
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Avatar sx={{
+                    bgcolor: "#4CAF50",
+                    mr: 1.5,
+                    width: 36,
+                    height: 36
+                  }}>
+                    <TrendingUpIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.9rem" }}>
+                    Ingresos
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#4CAF50",
+                    mb: 0.5,
+                    fontSize: "1.5rem"
+                  }}
+                >
+                  {balance && formatCurrency(balance.ingresos)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "grey.500", fontSize: "0.75rem" }}>
+                  Total de ingresos
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Gastos */}
+            <Card elevation={2} sx={{ height: "100%" }}>
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Avatar sx={{
+                    bgcolor: "#FF5722",
+                    mr: 1.5,
+                    width: 36,
+                    height: 36
+                  }}>
+                    <TrendingDownIcon sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.9rem" }}>
+                    Gastos
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#FF5722",
+                    mb: 0.5,
+                    fontSize: "1.5rem"
+                  }}
+                >
+                  {balance && formatCurrency(balance.gastos)}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "grey.500", fontSize: "0.75rem" }}>
+                  Total de gastos
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+
+        {/* Panel derecho: Gráfico circular */}
+        <Box>
+          <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5 }, height: "fit-content" }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1.5, sm: 2 } }}>
+              <AssessmentIcon sx={{ color: "primary.main", mr: 1, fontSize: { xs: 20, sm: 24 } }} />
+              <Typography
+                variant="h6"
           sx={{
-            background: "linear-gradient(135deg, #EC0029 0%, #C00020 100%)",
-            color: "white",
-            height: "100%"
-          }}
-        >
-          <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1, sm: 1.5 } }}>
-              <Avatar sx={{ 
-                bgcolor: "rgba(255,255,255,0.2)", 
-                mr: { xs: 1, sm: 1.5 },
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 }
-              }}>
-                <AccountBalanceIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: "0.9rem", sm: "1.25rem" } }}>
-                Balance Total
+                  fontWeight: "bold",
+                  color: "text.primary",
+                  fontSize: { xs: "1rem", sm: "1.1rem" }
+                }}
+              >
+                Distribución de Gastos
               </Typography>
             </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: "bold",
-                mb: { xs: 0.5, sm: 1 },
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }
-              }}
-            >
-              {balance && formatCurrency(balance.balance)}
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              {balance && balance.balance >= 0 ? (
-                <TrendingUpIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
-              ) : (
-                <TrendingDownIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
-              )}
-              <Typography variant="body2" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-                {balance && balance.balance >= 0 ? "Positivo" : "Negativo"}
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
 
-        {/* Ingresos */}
-        <Card elevation={2} sx={{ height: "100%" }}>
-          <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1, sm: 1.5 } }}>
-              <Avatar sx={{ 
-                bgcolor: "#4CAF50", 
-                mr: { xs: 1, sm: 1.5 },
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 }
-              }}>
-                <TrendingUpIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", fontSize: { xs: "0.9rem", sm: "1.25rem" } }}>
-                Ingresos
-              </Typography>
+            {/* Gráfico circular */}
+            <Box sx={{
+              width: "100%",
+              height: { xs: 250, sm: 280, lg: 300 },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={expensesByCategory}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="total"
+                  >
+                    {expensesByCategory.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getCategoryColor(index)} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={32}
+                    formatter={(value, entry: any) => (
+                      <span style={{ fontSize: "0.75rem", color: entry.color }}>
+                        {value}
+                      </span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: "bold",
-                color: "#4CAF50",
-                mb: { xs: 0.5, sm: 1 },
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }
-              }}
-            >
-              {balance && formatCurrency(balance.ingresos)}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "grey.500", fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-              Total de ingresos
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Gastos */}
-        <Card elevation={2} sx={{ height: "100%" }}>
-          <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1, sm: 1.5 } }}>
-              <Avatar sx={{ 
-                bgcolor: "#FF5722", 
-                mr: { xs: 1, sm: 1.5 },
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 }
-              }}>
-                <TrendingDownIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
-              </Avatar>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", fontSize: { xs: "0.9rem", sm: "1.25rem" } }}>
-                Gastos
-              </Typography>
-            </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: "bold",
-                color: "#FF5722",
-                mb: { xs: 0.5, sm: 1 },
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }
-              }}
-            >
-              {balance && formatCurrency(balance.gastos)}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "grey.500", fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-              Total de gastos
-            </Typography>
-          </CardContent>
-        </Card>
+          </Paper>
+        </Box>
       </Box>
 
-      {/* Gastos por categoría */}
-      <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, mb: { xs: 2, sm: 3, md: 4 } }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 1.5, sm: 2, md: 3 } }}>
-          <AssessmentIcon sx={{ color: "primary.main", mr: { xs: 0.5, sm: 1 }, fontSize: { xs: 20, sm: 24, md: 28 } }} />
+      {/* Análisis detallado de gastos - más compacto */}
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 2.5 }, mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <AssessmentIcon sx={{ color: "primary.main", mr: 1, fontSize: 22 }} />
           <Typography
-            variant="h5"
+            variant="h6"
             sx={{
               fontWeight: "bold",
               color: "text.primary",
-              fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" }
+              fontSize: "1rem"
             }}
           >
-            Gastos por Categoría
+            Análisis Detallado de Gastos
           </Typography>
         </Box>
 
-        {/* Gráfica de barras */}
-        <Box sx={{ 
-          width: "100%", 
-          height: { xs: 200, sm: 250, md: 300 }, 
-          mb: { xs: 2, sm: 3 },
-          display: { xs: "block", sm: "block" }
-        }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={expensesByCategory} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-              <XAxis 
-                dataKey="categoria" 
-                stroke="#C00020" 
-                tick={{ fontSize: 11, fontWeight: 600 }} 
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis stroke="#C00020" tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Bar dataKey="total" radius={[8, 8, 0, 0]}>
-                {expensesByCategory.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getCategoryColor(index)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Box>
-
-        {/* Tabla resumen debajo de la gráfica */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, sm: 2 } }}>
+        {/* Lista compacta de categorías */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {expensesByCategory.map((category, index) => (
             <Box key={category.categoria}>
               <Box sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                mb: { xs: 0.5, sm: 0.75 },
-                flexWrap: { xs: "wrap", sm: "nowrap" }
+                mb: 0.5,
+                flexWrap: "wrap"
               }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 }, flex: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
                   <ShoppingCartIcon
                     sx={{
                       color: getCategoryColor(index),
-                      fontSize: { xs: 16, sm: 20, md: 24 }
+                      fontSize: 18
                     }}
                   />
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     sx={{
                       fontWeight: 600,
-                      fontSize: { xs: "0.8rem", sm: "0.9rem", md: "1rem" }
+                      fontSize: "0.85rem"
                     }}
                   >
                     {category.categoria}
@@ -525,30 +595,30 @@ export default function DashboardPage() {
                     label={`${category.transacciones}`}
                     size="small"
                     sx={{
-                      fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.75rem" },
-                      height: { xs: 18, sm: 20, md: 24 },
+                      fontSize: "0.7rem",
+                      height: 20,
                       "& .MuiChip-label": {
-                        px: { xs: 0.5, sm: 1 }
+                        px: 0.8
                       }
                     }}
                   />
                 </Box>
-                <Box sx={{ textAlign: "right", ml: { xs: 1, sm: 0 } }}>
-          <Typography
-            variant="h6"
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography
+                    variant="subtitle1"
                     sx={{
                       fontWeight: "bold",
                       color: getCategoryColor(index),
-                      fontSize: { xs: "0.85rem", sm: "1rem", md: "1.25rem" }
+                      fontSize: "0.9rem"
                     }}
                   >
                     {formatCurrency(category.total)}
-          </Typography>
+                  </Typography>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "grey.500",
-                      fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.75rem" }
+                      fontSize: "0.7rem"
                     }}
                   >
                     {category.porcentaje.toFixed(1)}%
@@ -559,12 +629,12 @@ export default function DashboardPage() {
                 variant="determinate"
                 value={category.porcentaje}
                 sx={{
-                  height: { xs: 4, sm: 6, md: 8 },
-                  borderRadius: 4,
+                  height: 4,
+                  borderRadius: 2,
                   bgcolor: "grey.200",
                   "& .MuiLinearProgress-bar": {
                     bgcolor: getCategoryColor(index),
-                    borderRadius: 4
+                    borderRadius: 2
                   }
                 }}
               />
@@ -576,34 +646,35 @@ export default function DashboardPage() {
       {/* Información adicional */}
         <Paper
         elevation={2}
-          sx={{
-          p: { xs: 1.5, sm: 2, md: 3 },
+        sx={{
+          p: { xs: 1.5, sm: 2 },
           bgcolor: "#F5F5F5",
           borderLeft: { xs: "3px solid", sm: "4px solid" },
-          borderColor: "primary.main"
-          }}
-        >
-          <Typography
-            variant="h6"
+          borderColor: "primary.main",
+          borderRadius: 2
+        }}
+      >
+        <Typography
+          variant="subtitle1"
           sx={{
             fontWeight: "bold",
-            mb: { xs: 1, sm: 1.5 },
-            fontSize: { xs: "0.9rem", sm: "1rem", md: "1.25rem" }
+            mb: 1,
+            fontSize: { xs: "0.9rem", sm: "1rem" }
           }}
         >
           💡 Consejo Financiero
-          </Typography>
-        <Typography
-          variant="body1"
+        </Typography>
+          <Typography
+          variant="body2"
           sx={{
             color: "text.secondary",
-            lineHeight: 1.6,
-            fontSize: { xs: "0.8rem", sm: "0.9rem", md: "1rem" }
+            lineHeight: 1.5,
+            fontSize: { xs: "0.8rem", sm: "0.85rem" }
           }}
         >
           {balance && balance.balance > 0
             ? "¡Excelente! Tu balance es positivo. Considera invertir parte de tus ahorros para hacer crecer tu patrimonio."
-            : "Tu balance es negativo. Te recomendamos revisar tus gastos y crear un plan de ahorro. Nuestro asistente puede ayudarte a optimizar tus finanzas."}
+            : "Tu balance es negativo. Te recomendamos revisar tus gastos y crear un plan de ahorro. Maya puede ayudarte a optimizar tus finanzas."}
           </Typography>
         </Paper>
     </Box>

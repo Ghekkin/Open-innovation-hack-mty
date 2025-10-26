@@ -32,7 +32,7 @@ export default function AsistentePage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "¡Hola! Soy tu asistente virtual de Banorte. Puedo ayudarte con consultas sobre clientes, saldos, productos bancarios y más. ¿En qué puedo ayudarte hoy?",
+      content: "¡Hola! Soy Maya, tu asistente virtual de Banorte. Estoy aquí para ayudarte con todas tus consultas financieras, desde saldos hasta recomendaciones personalizadas. ¿En qué puedo ayudarte hoy?",
       sender: "assistant",
       timestamp: new Date()
     }
@@ -142,7 +142,7 @@ export default function AsistentePage() {
                 fontSize: { xs: "1.75rem", sm: "3rem" }
               }}
             >
-              Asistente Virtual Banorte
+              Maya - Asistente Virtual Banorte
             </Typography>
             <Typography
               variant="h6"
@@ -153,7 +153,7 @@ export default function AsistentePage() {
                 fontSize: { xs: "1rem", sm: "1.25rem" }
               }}
             >
-              ¿En qué puedo ayudarte hoy?
+              ¿En qué puedo ayudarte hoy? - Maya
             </Typography>
           </Box>
         )}
@@ -361,7 +361,7 @@ export default function AsistentePage() {
                 maxRows={4}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Envía un mensaje al asistente..."
+                placeholder="Envía un mensaje a Maya..."
                 disabled={isLoading}
                 variant="standard"
                 InputProps={{
@@ -422,7 +422,7 @@ export default function AsistentePage() {
               fontSize: "0.75rem"
             }}
           >
-            El asistente puede cometer errores. Verifica información importante.
+            Maya puede cometer errores. Verifica información importante.
           </Typography>
         </Box>
       </Box>
