@@ -174,6 +174,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Balance data:', balanceData);
     console.log('Expenses data:', expensesData);
+    console.log('Categorías encontradas:', expensesData.data?.categorias?.length || 0);
 
     // Procesar y formatear los datos
     const response = {
@@ -187,6 +188,8 @@ export async function GET(request: NextRequest) {
         total_gastos: expensesData.data?.total_gastos || 0
       }
     };
+
+    console.log('Respuesta final a enviar:', JSON.stringify(response, null, 2));
 
     return NextResponse.json(response);
 
