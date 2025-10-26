@@ -27,6 +27,7 @@ import {
   Send as SendIcon,
   AutoAwesome as AutoAwesomeIcon
 } from "@mui/icons-material";
+import { getCurrentUser, formatUsername } from "@/lib/auth";
 
 interface BalanceData {
   ingresos: number;
@@ -47,16 +48,18 @@ export default function DashboardPage() {
   const [expensesByCategory, setExpensesByCategory] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState<string>("");
+  const [userType, setUserType] = useState<'empresa' | 'personal'>('empresa');
   const [inputValue, setInputValue] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string>("");
   const [showAiResponse, setShowAiResponse] = useState(false);
 
   useEffect(() => {
-    // Obtener nombre de usuario del localStorage
-    const storedUsername = localStorage.getItem("banorte_username");
-    if (storedUsername) {
-      setUsername(storedUsername);
+    // Obtener información del usuario del localStorage
+    const user = getCurrentUser();
+    if (user) {
+      setUsername(user.username);
+      setUserType(user.type);
     }
     // Cargar datos financieros reales
     loadFinancialData();
@@ -352,7 +355,7 @@ export default function DashboardPage() {
                 fontSize: { xs: "1.5rem", sm: "2rem" }
               }}
             >
-              ¡Hola, {username || "Usuario"}! 👋
+              ¡Hola{username ? `, ${formatUsername(username, userType)}` : ""}! 👋
             </Typography>
             <Typography
               variant="body1"
