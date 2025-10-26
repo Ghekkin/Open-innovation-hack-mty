@@ -29,6 +29,9 @@ export default defineConfig({
 	],
 	vite: {
 		server: {
+			host: true
+		},
+		preview: {
 			host: true,
 			allowedHosts: ['*']
 		}
