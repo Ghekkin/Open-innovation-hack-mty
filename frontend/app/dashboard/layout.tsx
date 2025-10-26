@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Box,
@@ -17,8 +17,7 @@ import {
   useTheme,
   ThemeProvider,
   createTheme,
-  Chip,
-  Avatar,
+  Tooltip,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
@@ -32,6 +31,7 @@ import Image from "next/image";
 import { getCurrentUser, logout, formatUsername } from "@/lib/auth";
 
 const drawerWidth = 240;
+const collapsedDrawerWidth = 64;
 
 const customTheme = createTheme({
   palette: {
@@ -82,6 +82,10 @@ export default function DashboardLayout({
     setMobileOpen(!mobileOpen);
   };
 
+  const handleLogoToggle = () => {
+    setDesktopCollapsed(!desktopCollapsed);
+  };
+
   const handleNavigation = (path: string) => {
     router.push(path);
     if (isMobile) {
@@ -98,16 +102,36 @@ export default function DashboardLayout({
     <Box sx={{ mt: isMobile ? 2 : 0, height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Logo solo para desktop */}
       {!isMobile && (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 3, bgcolor: "primary.main" }}>
-          <Image
-            src="/logo-banorte.png"
-            alt="Banorte Logo"
-            width={200}
-            height={100}
-            style={{ filter: "brightness(0) invert(1)" }} // Convertir logo a blanco
-            priority
-          />
-        </Box>
+        <Tooltip title={desktopCollapsed ? "Haz clic para expandir" : "Haz clic para colapsar"} placement="right">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            p: 2,
+            bgcolor: "primary.main",
+            transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            cursor: "pointer",
+            minHeight: 90,
+            borderBottom: "1px solid rgba(255,255,255,0.12)",
+          }}
+          onClick={handleLogoToggle}
+        >
+            <Image
+              src={desktopCollapsed ? "/banorte-icon.png" : "/logo-banorte.png"}
+              alt="Banorte Logo"
+              width={desktopCollapsed ? 32 : 160}
+              height={desktopCollapsed ? 32 : 80}
+              style={{
+                filter: "brightness(0) invert(1)", // Convertir logo a blanco
+                transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+                maxWidth: "100%",
+                height: "auto",
+              }}
+              priority
+            />
+          </Box>
+        </Tooltip>
       )}
 
       {/* Información del usuario */}
@@ -153,19 +177,113 @@ export default function DashboardLayout({
       <List sx={{ flex: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton onClick={() => handleNavigation(item.path)}>
-              <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} sx={{ color: "white" }} />
-            </ListItemButton>
+            <Tooltip title={desktopCollapsed ? item.text : ""} placement="right">
+              <ListItemButton
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  minHeight: desktopCollapsed ? 64 : 60,
+                  px: desktopCollapsed ? 2 : 2.5,
+                  py: desktopCollapsed ? 2.2 : 1.6,
+                  justifyContent: desktopCollapsed ? "center" : "flex-start",
+                  borderRadius: desktopCollapsed ? 1 : 0,
+                  mx: desktopCollapsed ? 1 : 0,
+                  mb: desktopCollapsed ? 1 : 0,
+                  "&:hover": {
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    transform: desktopCollapsed ? "scale(1.05)" : "none",
+                    transition: "all 0.2s ease-in-out",
+                  },
+                  "&.Mui-selected": {
+                    bgcolor: "rgba(255,255,255,0.15)",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.2)",
+                    }
+                  }
+                }}
+              >
+                <ListItemIcon sx={{
+                  color: "white",
+                  minWidth: desktopCollapsed ? "auto" : 48,
+                  mr: desktopCollapsed ? 0 : 2.5,
+                  justifyContent: "center",
+                  alignItems: "center"
+                }}>
+                  {React.cloneElement(item.icon, {
+                    sx: {
+                      fontSize: desktopCollapsed ? "1.75rem" : "1.5rem",
+                      transition: "font-size 0.35s cubic-bezier(0.4, 0, 0.2, 1)"
+                    }
+                  })}
+                </ListItemIcon>
+                {!desktopCollapsed && (
+                  <ListItemText
+                    primary={item.text}
+                    sx={{
+                      color: "white",
+                      "& .MuiTypography-root": {
+                        fontSize: "1.1rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
+                        lineHeight: 1.3
+                      }
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         ))}
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon sx={{ color: "white" }}>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Cerrar Sesión" sx={{ color: "white" }} />
-          </ListItemButton>
+        <ListItem disablePadding sx={{ mt: "auto" }}>
+          <Tooltip title={desktopCollapsed ? "Logout" : ""} placement="right">
+            <ListItemButton
+              onClick={() => router.push("/")}
+              sx={{
+                minHeight: desktopCollapsed ? 64 : 60,
+                px: desktopCollapsed ? 2 : 2.5,
+                py: desktopCollapsed ? 2.2 : 1.6,
+                justifyContent: desktopCollapsed ? "center" : "flex-start",
+                borderRadius: desktopCollapsed ? 1 : 0,
+                mx: desktopCollapsed ? 1 : 0,
+                mb: desktopCollapsed ? 1 : 0,
+                "&:hover": {
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  transform: desktopCollapsed ? "scale(1.05)" : "none",
+                  transition: "all 0.2s ease-in-out",
+                },
+                borderTop: "1px solid rgba(255,255,255,0.12)",
+                mt: 0.5
+              }}
+            >
+              <ListItemIcon sx={{
+                color: "white",
+                minWidth: desktopCollapsed ? "auto" : 48,
+                mr: desktopCollapsed ? 0 : 2.5,
+                justifyContent: "center",
+                alignItems: "center"
+              }}>
+                {React.cloneElement(<LogoutIcon />, {
+                  sx: {
+                    fontSize: desktopCollapsed ? "1.75rem" : "1.5rem",
+                    transition: "font-size 0.3s ease-in-out"
+                  }
+                })}
+              </ListItemIcon>
+              {!desktopCollapsed && (
+                <ListItemText
+                  primary="Logout"
+                  sx={{
+                    color: "white",
+                    "& .MuiTypography-root": {
+                      fontSize: "1.1rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.03em",
+                      lineHeight: 1.3
+                    }
+                  }}
+                />
+              )}
+            </ListItemButton>
+          </Tooltip>
         </ListItem>
       </List>
     </Box>
@@ -179,14 +297,21 @@ export default function DashboardLayout({
           position="fixed"
           className="banorte"
           sx={{
-            width: { sm: `calc(100% - ${drawerWidth}px)` },
-            ml: { sm: `${drawerWidth}px` },
+            width: {
+              xs: "100%",
+              sm: `calc(100% - ${currentDrawerWidth}px)`
+            },
+            ml: {
+              xs: 0,
+              sm: `${currentDrawerWidth}px`
+            },
             bgcolor: "#eb0029",
             backgroundImage: "url(/navigation.png)",
             backgroundRepeat: "repeat-x",
             backgroundSize: "43.5px 64px",
             boxShadow: 1,
             height: "64px",
+            transition: "width 0.3s ease-in-out, margin-left 0.3s ease-in-out",
           }}
         >
           <Toolbar sx={{ height: "64px" }}>
@@ -206,7 +331,7 @@ export default function DashboardLayout({
 
         <Box
           component="nav"
-          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+          sx={{ width: { sm: currentDrawerWidth }, flexShrink: { sm: 0 } }}
         >
           <Drawer
             variant={isMobile ? "temporary" : "permanent"}
@@ -219,12 +344,14 @@ export default function DashboardLayout({
             sx={{
               "& .MuiDrawer-paper": {
                 boxSizing: "border-box",
-                width: drawerWidth,
+                width: currentDrawerWidth,
                 bgcolor: "#eb0029",
                 backgroundImage: "url(/navigation.png)",
                 backgroundRepeat: "repeat-x",
                 backgroundSize: "43.5px 64px",
                 borderRight: "1px solid rgba(0, 0, 0, 0.12)",
+                transition: "width 0.3s ease-in-out",
+                overflowX: "hidden",
               },
             }}
           >
@@ -236,9 +363,14 @@ export default function DashboardLayout({
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            width: { sm: `calc(100% - ${drawerWidth}px)` },
-            mt: 8,
+            p: { xs: 2, sm: 3 },
+            width: {
+              xs: "100%",
+              sm: `calc(100% - ${currentDrawerWidth}px)`
+            },
+            mt: { xs: 8, sm: 8 },
+            transition: "width 0.3s ease-in-out, padding 0.3s ease-in-out",
+            minHeight: "100vh",
           }}
         >
           {children}
