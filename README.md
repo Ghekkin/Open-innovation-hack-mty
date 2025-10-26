@@ -1,235 +1,144 @@
-# 🏦 Reto Banorte: MCP Financiero
+# Maya - Asistente Virtual de Banorte
 
-## 📋 Definición del Reto
+## HackMTY 2025 - Reto Open Innovation
 
-**El Reto Banorte: MCP Financiero** consiste en crear una herramienta financiera inteligente que ayude a tomar mejores decisiones usando inteligencia artificial y datos reales de una empresa.
 
-El corazón de tu solución será un **servidor MCP (Model Context Protocol)**: un módulo que analiza datos financieros, ejecuta cálculos complejos y responde con información útil, ya sea para mostrar en dashboards o para interactuar por medio de un asistente conversacional.
+## Enlaces
 
----
+*   **Video Demo:** [LINK_VIDEO_DEMO]
+*   **Diagrama de Arquitectura:** [LINK_DIAGRAMA]
+*   **Documentación Técnica:** [LINK_DOCS_DESPLEGADA]
 
-## 🎯 Objetivo
+## Concepto de la Solución
 
-Desarrollar una solución financiera inteligente que combine:
+Este proyecto presenta una implementación de un **Motor de Cómputo Ponderado (MCP) Financiero**, diseñado para ofrecer a los usuarios de Banorte una herramienta inteligente de análisis y planificación financiera. La solución ingiere datos transaccionales y, a través de un asistente conversacional, permite a los usuarios obtener análisis descriptivos, realizar proyecciones, construir planes financieros y recibir recomendaciones personalizadas.
 
-### ✨ Un servidor MCP
-Capaz de analizar datos financieros, ejecutar cálculos complejos y entregar respuestas útiles.
+Nuestro enfoque es un **modelo híbrido**, que combina:
+1.  **Herramientas Predefinidas (Deterministas):** Funciones robustas y probadas para cálculos financieros precisos (ej. análisis de gastos, proyecciones de inversión).
+2.  **Capacidades Generativas (LLM):** Un Large Language Model (LLM) que actúa como orquestador, interpretando el lenguaje natural del usuario para invocar las herramientas adecuadas y generar narrativas y explicaciones coherentes.
 
-### 🎨 Una interfaz intuitiva
-Que permita al usuario entender su situación actual, simular decisiones futuras y recibir recomendaciones en tiempo real.
+## Tech Stack
 
-### 🔄 Dos posibles enfoques (o ambos):
+El proyecto es un monorepo que se compone de tres subproyectos principales:
 
-#### **Enfoque A – Asistente Financiero con IA**
-Responde dudas del usuario y entrega recomendaciones personalizadas.
-- Responde preguntas como un CFO virtual
-- Explica, recomienda y guía
+| Componente            | Tecnología Principal | Descripción                                                              |
+| --------------------- | -------------------- | ------------------------------------------------------------------------ |
+| **`backend/`**        | **Python, FastAPI**  | API REST que expone el MCP, orquesta las herramientas y se comunica con la BD. |
+| **`frontend/`**       | **Next.js, React**   | Aplicación web interactiva con el asistente y visualizaciones de datos.  |
+| **`documentation/`**  | **Astro**            | Sitio de documentación estática con la descripción técnica del proyecto. |
 
-#### **Enfoque B – Simulador Financiero "What-If"**
-Permite proyectar escenarios futuros y anticipar riesgos o impactos.
-- Permite probar escenarios y ver su impacto
-- Visual, interactivo y predictivo
+### Tecnologías Clave:
+*   **Backend:** Python, FastAPI, SQLAlchemy, Pandas, Pydantic.
+*   **Frontend:** TypeScript, Next.js, React, Tailwind CSS, Recharts.
+*   **Base de Datos:** MySQL (inferido por el conector).
+*   **Documentación:** Astro, Starlight.
 
----
+## Arquitectura
 
-## 🎯 El Objetivo Final
+El monorepo está estructurado para separar las responsabilidades de cada componente:
 
-Crear una herramienta que transforme datos financieros en decisiones claras, ágiles y personalizadas, usando el MCP como cerebro de la solución.
+*   `backend/`: Contiene toda la lógica del servidor.
+    *   `main.py`: Punto de entrada de la API FastAPI.
+    *   `src/mcp_server.py`: Núcleo del Motor de Cómputo Ponderado.
+    *   `src/tools/`: Conjunto de herramientas financieras que el MCP puede invocar.
+    *   `src/database/`: Lógica de conexión y consulta a la base de datos.
 
----
+*   `frontend/`: Contiene la aplicación cliente.
+    *   `app/dashboard/asistente/`: Componentes principales de la interfaz de chat.
+    *   `app/api/`: Rutas de API de Next.js que actúan como proxy hacia el backend de FastAPI.
+    *   `lib/mcp-client.ts`: Cliente para comunicarse con el MCP.
 
-## 🚨 Problemática
+*   `documentation/`: Contiene el sitio de documentación técnica.
+    *   `src/content/docs/`: Archivos Markdown que generan las páginas de documentación.
 
-Hoy en día, tomar decisiones financieras sigue siendo un reto para personas y empresas. Aunque tienen acceso a datos, no cuentan con herramientas inteligentes que los conviertan en acciones concretas.
+## Instalación y Ejecución Local
 
-### 📊 Retos actuales:
+Siga estos pasos para levantar el entorno de desarrollo completo.
 
-- **Datos dispersos y difíciles de interpretar**
-  - La información financiera existe, pero no está integrada ni personalizada.
+### Prerrequisitos
 
-- **Falta de claridad para decidir**
-  - Los usuarios no saben si pueden o no tomar decisiones como invertir, contratar o recortar.
+*   Node.js (v20 o superior)
+*   Python (v3.11 o superior)
+*   Una instancia de base de datos MySQL en ejecución.
 
-- **Herramientas poco interactivas**
-  - Dashboards pasivos, sin contexto ni recomendaciones reales.
+### 1. Backend (`backend/`)
 
-- **Nula interacción con IA contextual**
-  - No hay forma de "conversar" con las finanzas como si tuvieran un asesor al lado.
+El backend es el cerebro del sistema, ejecutando el MCP y exponiendo los endpoints.
 
-- **Todo es reactivo, nada proactivo**
-  - Se detectan problemas tarde, cuando ya impactaron el flujo o presupuesto.
+1.  **Navegar al directorio:**
+    ```bash
+    cd backend
+    ```
 
----
+2.  **Crear un entorno virtual (recomendado):**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate  # En Windows: .venv\Scripts\activate
+    ```
 
-## 💡 Necesidades
+3.  **Instalar dependencias:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### LOS USUARIOS NECESITAN:
+4.  **Configurar variables de entorno:**
+    Cree un archivo `.env` en el directorio `backend/` a partir del archivo `.env.example` (si existe) o créelo desde cero. Debe contener las credenciales de la base de datos:
+    ```env
+    DB_HOST=localhost
+    DB_PORT=3306
+    DB_USER=tu_usuario
+    DB_PASSWORD=tu_contraseña
+    DB_NAME=tu_base_de_datos
+    ```
 
-1. **Integre toda la información financiera**
-   - Capaz de leer, procesar y analizar datos de forma centralizada.
+5.  **Ejecutar el servidor:**
+    ```bash
+    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+    El servidor estará disponible en `http://localhost:8000`.
 
-2. **Permita interactuar con la inteligencia financiera**
-   - Que el usuario pueda hacer preguntas en lenguaje natural y obtener respuestas útiles.
+### 2. Frontend (`frontend/`)
 
-3. **Anticipe escenarios y riesgos**
-   - Herramientas que proyecten el futuro financiero y sugieran acciones antes de que sea tarde.
-
-4. **Ofrezca visualización clara y accionable**
-   - Dashboards interactivos que no solo muestren, sino que guíen decisiones.
-
-5. **Use IA para dar recomendaciones personalizadas**
-   - Un copiloto financiero que entienda el contexto y ofrezca respuestas relevantes.
-
-6. **Responda en tiempo real**
-   - Conectividad rápida entre frontend y servidor MCP para una experiencia fluida.
-
----
-
-## 📦 Entregables Esperados
-
-### 1. ✅ Servidor MCP funcional
-Herramientas clave como: consultar saldo, analizar gastos, simular escenarios, proyectar flujo, comparar contra presupuesto y generar recomendaciones.
-
-### 2. 🎨 Frontend intuitivo
-Pueden ser: Dashboard visual, simulador "what-if", chatbot conversacional, alertas y controles interactivos.
-
-### 3. 📖 README explicativo
-Guía básica de ejecución y arquitectura general del proyecto.
-
-### 4. 🎥 Demo en video (5 minutos aprox.)
-Ejemplo claro de cómo la solución resuelve casos.
-
-### 5. 🏗️ Diagrama de arquitectura general
-Esquema visual que muestre cómo se integran tecnologías, APIs, base de datos y el flujo entre frontend y servidor MCP.
-
----
-
-## 🎯 ¿Qué queremos se mejore?
-
-| **Antes** | **Queremos lograr** |
-|-----------|---------------------|
-| Dashboards pasivos | Plataformas inteligentes que piensan y recomiendan |
-| Decisiones aisladas | Decisiones guiadas por contexto y análisis financiero real |
-| Resúmenes planos | Conversaciones útiles con IA que responde y asesora |
-| Reacción tardía | Anticipación proactiva con simulaciones "what-if" |
-| Experiencias genéricas | Soluciones personalizadas para cada usuario o empresa |
-
----
-
-## 🚀 Alcance e Impacto
-
-Este reto impulsa la creación de soluciones financieras inteligentes que van más allá de la visualización de datos tradicional. El objetivo es transformar la experiencia del usuario en distintos niveles:
-
-### 📈 Alcance:
-
-- ✅ Aplicable a distintos perfiles: usuarios individuales, PyMEs o grandes empresas.
-- ✅ Puede implementarse en plataformas web, móviles o como parte de un ecosistema financiero más amplio.
-- ✅ Flexible para distintos niveles de complejidad, desde prototipos funcionales hasta soluciones escalables.
-
-### 💫 Impacto:
-
-- ✅ Mejora la toma de decisiones financieras mediante inteligencia contextual y simulaciones proactivas.
-- ✅ Genera una experiencia personalizada que traduce datos en acciones concretas.
-- ✅ Acelera la transformación digital del sector financiero a través de IA aplicada y herramientas conversacionales.
-- ✅ Posiciona al banco como referente en innovación, anticipación y acompañamiento inteligente.
-
----
-
-## ⚠️ Restricciones y Riesgos del Reto
-
-Para asegurar la viabilidad del desarrollo durante el hackathon, es importante considerar las siguientes limitaciones y posibles riesgos:
-
-### 🔒 Restricciones
-
-- ⏱️ **Tiempo limitado** para diseñar, desarrollar y probar la solución.
-- 🔗 **Integración obligatoria** entre frontend y backend.
-
-### ⚡ Riesgos comunes
-
-- 📊 **Soluciones centradas solo en visualización**, sin lógica inteligente o interacción real.
-- 🔌 **Falta de conexión entre el problema y las herramientas del MCP**, perdiendo el enfoque de valor.
-- 🤖 **Respuestas genéricas de IA**.
-- 🏗️ **Sobrecarga técnica** al intentar implementar demasiadas funcionalidades sin claridad ni propósito.
-
----
-
-## 📊 Datos Proporcionados
-
-Para este reto se proporcionan **dos archivos Excel (.xlsx)** que contienen:
-
-### 📄 Archivo 1: Datos Empresariales
-Información financiera de la empresa incluyendo:
-- ID de empresa
-- Fecha de transacciones
-- Tipo de operación (ingreso/gasto)
-- Concepto y categoría
-- Montos
-
-### 📄 Archivo 2: Datos Personales
-Información financiera personal del usuario incluyendo:
-- ID de usuario
-- Fecha de transacciones
-- Categoría y descripción
-- Montos
-- Tipo de operación (ingreso/gasto)
-
-Estos datos serán la base para que el servidor MCP realice análisis, proyecciones y recomendaciones financieras.
-
----
-
-## 🛠️ Tecnologías Utilizadas
-
-### Backend (MCP sobre HTTP)
-- **Framework**: FastMCP (Python)
-- **Protocolo**: MCP (Model Context Protocol) sobre HTTP
-- **Transporte**: JSON-RPC 2.0 sobre HTTP
-- **Base de datos**: MySQL 8.0+
-- **Herramientas**: 14 herramientas financieras avanzadas
-
-### Frontend
-- **Framework**: Next.js 14+ (React)
-- **Styling**: Tailwind CSS
-- **Visualización**: Chart.js / Recharts
-
-### Infraestructura
-- **Deployment**: Railway / Render
-- **Containerización**: Docker
-- **CI/CD**: GitHub Actions
-
-📖 **[Ver documentación completa del backend MCP](./backend/README.md)**
-
----
-
-## 🏁 Criterios de Evaluación
-
-1. **Funcionalidad del servidor MCP** - ¿Resuelve problemas financieros reales?
-2. **Calidad de la interfaz** - ¿Es intuitiva y útil?
-3. **Integración frontend-backend** - ¿Funciona de manera fluida?
-4. **Innovación** - ¿Ofrece algo diferente y valioso?
-5. **Presentación** - ¿Se explica claramente el valor de la solución?
-
----
-
-## 📝 Notas Importantes
-
-- Este es un proyecto de hackathon con tiempo limitado
-- Se prioriza un MVP funcional sobre una solución completa
-- La creatividad y el enfoque en resolver problemas reales son clave
-- La documentación clara es tan importante como el código
-
----
-
-## 👥 Equipo
-
-_[Agregar información del equipo aquí]_
-
----
-
-## 📄 Licencia
-
-_[Especificar licencia si aplica]_
-
----
-
-**¡Buena suerte en el hackathon! 🚀**
-
+La interfaz de usuario desde donde se interactúa con el asistente.
+
+1.  **Navegar al directorio:**
+    ```bash
+    cd frontend
+    ```
+
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
+
+3.  **Configurar variables de entorno:**
+    Cree un archivo `.env.local` en el directorio `frontend/`. Este archivo debe contener la URL del backend.
+    ```env
+    NEXT_PUBLIC_MCP_API_URL=http://localhost:8000
+    ```
+
+4.  **Ejecutar la aplicación:**
+    ```bash
+    npm run dev
+    ```
+    La aplicación estará disponible en `http://localhost:3000`.
+
+### 3. Documentación (`documentation/`)
+
+El sitio web con la documentación técnica detallada.
+
+1.  **Navegar al directorio:**
+    ```bash
+    cd documentation
+    ```
+
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
+
+3.  **Ejecutar el servidor de desarrollo:**
+    ```bash
+    npm run dev
+    ```
+    El sitio de documentación estará disponible en `http://localhost:4321`.

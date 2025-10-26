@@ -1,0 +1,15 @@
+:root {
+	--sl-color-accent-low: #EB0029;
+	--sl-color-accent: #EB0029;
+	--sl-color-accent-high: #EB0029;
+}
+
+:root[data-theme='dark'] {
+	--sl-color-accent-low: #ff264c;
+	--sl-color-accent: #ff264c;
+	--sl-color-accent-high: #ff264c;
+}
+
+:root[data-theme='dark'] a[aria-current="page"] {
+    color: white;
+}
