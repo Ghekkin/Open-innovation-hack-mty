@@ -22,10 +22,14 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
             start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d")
             end_date = (today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)).strftime("%Y-%m-%d")
 
+        logger.info(f"Consultando gastos para company_id={company_id}, período: {start_date} a {end_date}")
+
         query = """
             SELECT categoria, SUM(monto), COUNT(*)
-            FROM transacciones
+            FROM finanzas_empresa
             WHERE tipo = 'gasto'
+            AND fecha >= %s
+            AND fecha <= %s
         """
         params.extend([start_date, end_date])
         
@@ -35,28 +39,49 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
             
         query += " GROUP BY categoria ORDER BY SUM(monto) DESC"
         
+        logger.info(f"Query: {query}")
+        logger.info(f"Params: {params}")
+        
         expenses_by_cat = db.execute_query(query, tuple(params), fetch='all')
         
+        logger.info(f"Resultados obtenidos: {len(expenses_by_cat) if expenses_by_cat else 0} categorías")
+        
         if not expenses_by_cat:
-            return {"message": "No hay gastos registrados para el período y empresa especificados."}
+            return {
+                "success": True,
+                "data": {
+                    "categorias": [],
+                    "total_gastos": 0,
+                    "periodo": {
+                        "inicio": start_date,
+                        "fin": end_date
+                    }
+                },
+                "message": "No hay gastos registrados para el período y empresa especificados."
+            }
             
         total_expenses = sum(e[1] for e in expenses_by_cat)
         
+        categorias = [
+            {
+                "categoria": cat,
+                "total": float(total),
+                "transacciones": count,
+                "porcentaje": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
+            } for cat, total, count in expenses_by_cat
+        ]
+        
         result = {
             "success": True,
-            "period": {
-                "start_date": start_date,
-                "end_date": end_date
+            "data": {
+                "categorias": categorias,
+                "total_gastos": float(total_expenses),
+                "periodo": {
+                    "inicio": start_date,
+                    "fin": end_date
+                }
             },
-            "total_expenses": float(total_expenses),
-            "categories": [
-                {
-                    "category": cat,
-                    "total_spent": float(total),
-                    "transaction_count": count,
-                    "percentage_of_total": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
-                } for cat, total, count in expenses_by_cat
-            ]
+            "message": f"Análisis de gastos obtenido exitosamente para {len(categorias)} categorías"
         }
         return result
         

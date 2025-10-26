@@ -172,7 +172,7 @@ function detectMCPTool(message: string): { tool: string; args: any } | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, userInfo } = await request.json();
+    const { message, conversationHistory, userInfo } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -185,6 +185,9 @@ export async function POST(request: NextRequest) {
     const username = userInfo?.username || 'Usuario';
     const userType = userInfo?.type || 'desconocido';
     const userId = userInfo?.userId || '';
+    
+    // Log del historial recibido
+    console.log(`[Chat] Historial de conversación: ${conversationHistory?.length || 0} mensajes`);
 
     // Detectar si necesitamos llamar al MCP
     const mcpTool = detectMCPTool(message);
@@ -267,6 +270,48 @@ IMPORTANTE:
 
 Responde de manera profesional, clara y en español.${userContext}${mcpContext}`;
 
+    // Construir el historial de conversación para Gemini
+    const geminiContents = [];
+    
+    // Agregar el prompt del sistema como primer mensaje del usuario
+    geminiContents.push({
+      role: 'user',
+      parts: [{ text: systemPrompt }]
+    });
+    
+    // Agregar respuesta inicial del modelo
+    geminiContents.push({
+      role: 'model',
+      parts: [{ text: 'Entendido. Soy Maya, tu asistente financiera de Banorte. Estoy lista para ayudarte.' }]
+    });
+    
+    // Agregar el historial de conversación previo
+    if (conversationHistory && conversationHistory.length > 0) {
+      // Omitir el mensaje de bienvenida inicial si existe
+      const filteredHistory = conversationHistory.filter((msg: any, index: number) => {
+        // Omitir el primer mensaje si es del asistente y contiene "Hola"
+        if (index === 0 && msg.role === 'assistant' && msg.content.includes('Hola')) {
+          return false;
+        }
+        return true;
+      });
+      
+      for (const msg of filteredHistory) {
+        geminiContents.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+    
+    // Agregar el mensaje actual del usuario
+    geminiContents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
+    
+    console.log(`[Chat] Enviando ${geminiContents.length} mensajes a Gemini`);
+    
     // Llamada a Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -274,15 +319,7 @@ Responde de manera profesional, clara y en español.${userContext}${mcpContext}`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `${systemPrompt}\n\nUsuario: ${message}\n\nAsistente:`
-              }
-            ]
-          }
-        ],
+        contents: geminiContents,
         generationConfig: {
           temperature: 0.7,
           topK: 40,

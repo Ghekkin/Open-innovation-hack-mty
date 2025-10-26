@@ -130,6 +130,12 @@ export async function POST(request: NextRequest) {
     const userType = userInfo?.type || 'personal';
     const userId = userInfo?.userId || '';
 
+    console.log('[Financial Plan API] URL del servidor MCP:', MCP_SERVER_URL);
+    console.log('[Financial Plan API] Variables de entorno disponibles:', {
+      MCP_SERVER_URL: process.env.MCP_SERVER_URL,
+      NODE_ENV: process.env.NODE_ENV
+    });
+
     // Preparar datos para el MCP
     const use_saved_data = planOption === 'saved';
     

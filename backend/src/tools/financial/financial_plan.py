@@ -32,11 +32,15 @@ def generate_financial_plan_tool(
         Plan financiero completo con proyecciones, recomendaciones y estrategias
     """
     try:
-        logger.info(f"Generando plan financiero para {entity_type} {entity_id}")
-        
+        # Normalizar el tipo de entidad: aceptar 'empresa' o 'company'
+        normalized_type = "company" if str(entity_type).lower() in ("company", "empresa") else "personal"
+        logger.info(f"Generando plan financiero para {normalized_type} {entity_id}")
+
         db = get_db_connection()
-        table = "transacciones_personales" if entity_type == "personal" else "transacciones"
-        id_column = "usuario_id" if entity_type == "personal" else "empresa_id"
+        # Usar tablas reales del esquema MySQL
+        table = "finanzas_personales" if normalized_type == "personal" else "finanzas_empresa"
+        # Columnas de ID reales por esquema
+        id_column = "id_usuario" if normalized_type == "personal" else "empresa_id"
         
         # 1. Obtener datos históricos si use_saved_data es True
         historical_data = {}
@@ -47,8 +51,17 @@ def generate_financial_plan_tool(
                 FROM {table}
                 WHERE {id_column} = %s
             """
-            balance_result = db.execute_query(balance_query, (entity_id,), fetch='one')
-            current_balance = float(balance_result[0]) if balance_result and balance_result[0] else 0
+            balance_rows = db.execute_query(balance_query, (entity_id,), fetch=True)
+            current_balance = 0.0
+            if balance_rows and isinstance(balance_rows, list) and len(balance_rows) > 0:
+                first = balance_rows[0]
+                logger.info(f"Balance row type: {type(first)}, content: {first}")
+                if isinstance(first, dict):
+                    balance_val = first.get('balance', 0)
+                    logger.info(f"Balance value type: {type(balance_val)}, value: {balance_val}")
+                    current_balance = float(balance_val) if balance_val is not None else 0.0
+                else:
+                    logger.warning(f"Expected dict but got {type(first)}: {first}")
             
             # Obtener promedios mensuales de los últimos 6 meses
             avg_query = f"""
@@ -57,11 +70,21 @@ def generate_financial_plan_tool(
                     AVG(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as avg_expense
                 FROM {table}
                 WHERE {id_column} = %s 
-                AND fecha >= NOW() - INTERVAL '6 months'
+                AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
             """
-            avg_result = db.execute_query(avg_query, (entity_id,), fetch='one')
-            avg_monthly_income = float(avg_result[0]) if avg_result and avg_result[0] else 0
-            avg_monthly_expense = float(avg_result[1]) if avg_result and avg_result[1] else 0
+            avg_rows = db.execute_query(avg_query, (entity_id,), fetch=True)
+            avg_monthly_income = 0.0
+            avg_monthly_expense = 0.0
+            if avg_rows and isinstance(avg_rows, list) and len(avg_rows) > 0:
+                first = avg_rows[0]
+                logger.info(f"Avg row type: {type(first)}, content: {first}")
+                if isinstance(first, dict):
+                    income_val = first.get('avg_income', 0)
+                    expense_val = first.get('avg_expense', 0)
+                    avg_monthly_income = float(income_val) if income_val is not None else 0.0
+                    avg_monthly_expense = float(expense_val) if expense_val is not None else 0.0
+                else:
+                    logger.warning(f"Expected dict but got {type(first)}: {first}")
             
             # Obtener gastos por categoría
             category_query = f"""
@@ -69,11 +92,11 @@ def generate_financial_plan_tool(
                 FROM {table}
                 WHERE {id_column} = %s 
                 AND tipo = 'gasto'
-                AND fecha >= NOW() - INTERVAL '6 months'
+                AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
                 GROUP BY categoria
                 ORDER BY avg_amount DESC
             """
-            categories = db.execute_query(category_query, (entity_id,), fetch='all')
+            categories_rows = db.execute_query(category_query, (entity_id,), fetch=True)
             
             historical_data = {
                 "current_balance": current_balance,
@@ -81,9 +104,13 @@ def generate_financial_plan_tool(
                 "avg_monthly_expense": avg_monthly_expense,
                 "monthly_net": avg_monthly_income - avg_monthly_expense,
                 "expense_categories": [
-                    {"category": c[0], "avg_amount": float(c[1]), "frequency": int(c[2])}
-                    for c in categories
-                ] if categories else []
+                    {
+                        "category": (c.get('categoria')),
+                        "avg_amount": float(c.get('avg_amount') or 0),
+                        "frequency": int(c.get('frequency') or 0),
+                    }
+                    for c in (categories_rows or [])
+                ]
             }
         else:
             historical_data = {
@@ -169,7 +196,7 @@ def generate_financial_plan_tool(
             "success": True,
             "plan_id": f"FP-{entity_type[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "generated_at": datetime.now().isoformat(),
-            "entity_type": entity_type,
+            "entity_type": normalized_type,
             "entity_id": entity_id,
             "goal": plan_goal,
             "goal_analysis": goal_analysis,
