@@ -1,77 +1,66 @@
 """Expense analysis tools for MCP server."""
+from database import get_db_connection
+from utils import setup_logger
 import logging
-from typing import Any, Dict, Optional
 from datetime import datetime
-from database import FinancialDataQueries
+from dateutil.relativedelta import relativedelta
 
-logger = logging.getLogger(__name__)
+logger = setup_logger('expense_tools', logging.INFO)
 
-
-def get_expenses_by_category_tool(
-    company_id: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-) -> Dict[str, Any]:
+def get_expenses_by_category_tool(company_id: str = None, start_date: str = None, end_date: str = None) -> dict:
     """
-    Analyze expenses grouped by category.
-    
-    This tool provides a breakdown of expenses by category,
-    showing total amounts and transaction counts.
-    
-    Args:
-        company_id: Optional company ID to filter results
-        start_date: Start date in YYYY-MM-DD format
-        end_date: End date in YYYY-MM-DD format
-    
-    Returns:
-        Dictionary with expense breakdown by category
+    Analiza los gastos de una empresa agrupados por categoría para un período de tiempo.
+    Si no se especifican fechas, se utiliza el mes actual por defecto.
     """
     try:
-        queries = FinancialDataQueries()
+        db = get_db_connection()
         
-        # Parse dates if provided
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+        params = []
         
-        expenses = queries.get_expenses_by_category(
-            company_id=company_id,
-            start_date=start_dt,
-            end_date=end_dt
-        )
+        if not start_date or not end_date:
+            today = datetime.now()
+            start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d")
+            end_date = (today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)).strftime("%Y-%m-%d")
+
+        query = """
+            SELECT categoria, SUM(monto), COUNT(*)
+            FROM transacciones
+            WHERE tipo = 'gasto'
+        """
+        params.extend([start_date, end_date])
         
-        # Calculate total
-        total_expenses = sum(e['total'] for e in expenses)
+        if company_id:
+            query += " AND empresa_id = %s"
+            params.append(company_id)
+            
+        query += " GROUP BY categoria ORDER BY SUM(monto) DESC"
         
-        # Add percentage to each category
-        for expense in expenses:
-            expense['porcentaje'] = round((expense['total'] / total_expenses * 100), 2) if total_expenses > 0 else 0
+        expenses_by_cat = db.execute_query(query, tuple(params), fetch='all')
         
-        return {
-            'success': True,
-            'data': {
-                'categorias': expenses,
-                'total_gastos': round(total_expenses, 2),
-                'numero_categorias': len(expenses),
-                'periodo': {
-                    'inicio': start_date,
-                    'fin': end_date
-                }
+        if not expenses_by_cat:
+            return {"message": "No hay gastos registrados para el período y empresa especificados."}
+            
+        total_expenses = sum(e[1] for e in expenses_by_cat)
+        
+        result = {
+            "success": True,
+            "period": {
+                "start_date": start_date,
+                "end_date": end_date
             },
-            'message': 'Análisis de gastos por categoría obtenido exitosamente'
+            "total_expenses": float(total_expenses),
+            "categories": [
+                {
+                    "category": cat,
+                    "total_spent": float(total),
+                    "transaction_count": count,
+                    "percentage_of_total": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
+                } for cat, total, count in expenses_by_cat
+            ]
         }
+        return result
         
-    except ValueError as e:
-        logger.error(f"Date parsing error: {e}")
-        return {
-            'success': False,
-            'error': str(e),
-            'message': 'Formato de fecha inválido. Use YYYY-MM-DD'
-        }
     except Exception as e:
-        logger.error(f"Error in get_expenses_by_category_tool: {e}")
-        return {
-            'success': False,
-            'error': str(e),
-            'message': 'Error al analizar gastos por categoría'
-        }
+        logger.error(f"Error en get_expenses_by_category_tool: {e}")
+        return {"success": False, "error": str(e)}
 

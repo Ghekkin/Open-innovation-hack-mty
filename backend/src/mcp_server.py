@@ -53,6 +53,7 @@ from tools.financial.planning import (
     goal_based_plan_tool,
     budget_allocator_tool,
     debt_paydown_optimizer_tool,
+    get_current_month_spending_summary,
 )
 from utils import setup_logger
 
@@ -596,6 +597,28 @@ async def list_tools() -> list[Tool]:
                 "required": ["debts"],
             },
         ),
+        Tool(
+            name="get_current_month_spending",
+            description=(
+                "Obtiene un resumen del total de gastos para el mes actual. "
+                "Es un atajo para la pregunta '¿Cuánto he gastado este mes?'. "
+                "No requiere especificar fechas."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "entity_type": {
+                        "type": "string",
+                        "description": "Tipo de entidad ('personal' o 'company')",
+                        "default": "personal",
+                    },
+                    "entity_id": {
+                        "type": "string",
+                        "description": "ID del usuario o empresa",
+                    },
+                },
+            },
+        ),
     ]
 
 
@@ -784,6 +807,12 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageCo
                 debts=arguments.get("debts"),
                 metodo=arguments.get("metodo", "avalancha"),
                 extra_mensual=arguments.get("extra_mensual", 0.0),
+            )
+
+        elif name == "get_current_month_spending":
+            result = get_current_month_spending_summary(
+                entity_type=arguments.get("entity_type", "personal"),
+                entity_id=arguments.get("entity_id")
             )
 
         else:

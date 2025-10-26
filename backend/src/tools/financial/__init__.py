@@ -1,4 +1,6 @@
 
+from .shortcuts import get_current_month_spending_summary
+
 # Exponer las funciones de los módulos para facilitar la importación
 from .analytics import (
     get_spending_trends_tool,

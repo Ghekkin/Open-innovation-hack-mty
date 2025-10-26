@@ -25,6 +25,7 @@ from tools.financial.analytics import (
     compare_periods_tool,
 )
 from tools.financial.predictive import predict_cash_shortage_tool
+from tools.financial.shortcuts import get_current_month_spending_summary
 from utils import setup_logger
 
 # Setup logger
@@ -32,7 +33,7 @@ logger = setup_logger('mcp_http_server', logging.INFO)
 
 # Initialize FastMCP server
 mcp = FastMCP(
-    name="MCP Financiero Banorte",
+    name="",
     instructions="""
     Servidor MCP para análisis financiero inteligente.
     
@@ -421,6 +422,27 @@ def get_stress_test(
         income_reduction=income_reduction,
         expense_increase=expense_increase
     )
+
+
+@mcp.tool()
+def get_current_month_spending(
+    entity_type: str = "personal",
+    entity_id: Optional[str] = None
+) -> dict:
+    """
+    Obtiene un resumen del total de gastos para el mes actual.
+    Es un atajo para la pregunta '¿Cuánto he gastado este mes?'.
+    No requiere especificar fechas.
+    
+    Args:
+        entity_type: Tipo de entidad ('personal' o 'company', default: 'personal')
+        entity_id: ID de la entidad (usuario o empresa)
+        
+    Returns:
+        Diccionario con el total gastado y número de transacciones.
+    """
+    logger.info(f"Ejecutando get_current_month_spending: entity_type={entity_type}, entity_id={entity_id}")
+    return get_current_month_spending_summary(entity_type=entity_type, entity_id=entity_id)
 
 
 # ==================== INICIALIZACIÓN ====================
