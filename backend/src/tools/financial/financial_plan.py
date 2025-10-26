@@ -51,8 +51,11 @@ def generate_financial_plan_tool(
                 FROM {table}
                 WHERE {id_column} = %s
             """
-            balance_result = db.execute_query(balance_query, (entity_id,), fetch='one')
-            current_balance = float(balance_result[0]) if balance_result and balance_result[0] else 0
+            balance_rows = db.execute_query(balance_query, (entity_id,), fetch=True)
+            current_balance = 0.0
+            if balance_rows and isinstance(balance_rows, list):
+                first = balance_rows[0] or {}
+                current_balance = float(first.get('balance') or 0)
             
             # Obtener promedios mensuales de los últimos 6 meses
             avg_query = f"""
@@ -63,9 +66,13 @@ def generate_financial_plan_tool(
                 WHERE {id_column} = %s 
                 AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
             """
-            avg_result = db.execute_query(avg_query, (entity_id,), fetch='one')
-            avg_monthly_income = float(avg_result[0]) if avg_result and avg_result[0] else 0
-            avg_monthly_expense = float(avg_result[1]) if avg_result and avg_result[1] else 0
+            avg_rows = db.execute_query(avg_query, (entity_id,), fetch=True)
+            avg_monthly_income = 0.0
+            avg_monthly_expense = 0.0
+            if avg_rows and isinstance(avg_rows, list):
+                first = avg_rows[0] or {}
+                avg_monthly_income = float(first.get('avg_income') or 0)
+                avg_monthly_expense = float(first.get('avg_expense') or 0)
             
             # Obtener gastos por categoría
             category_query = f"""
@@ -77,7 +84,7 @@ def generate_financial_plan_tool(
                 GROUP BY categoria
                 ORDER BY avg_amount DESC
             """
-            categories = db.execute_query(category_query, (entity_id,), fetch='all')
+            categories_rows = db.execute_query(category_query, (entity_id,), fetch=True)
             
             historical_data = {
                 "current_balance": current_balance,
@@ -85,9 +92,13 @@ def generate_financial_plan_tool(
                 "avg_monthly_expense": avg_monthly_expense,
                 "monthly_net": avg_monthly_income - avg_monthly_expense,
                 "expense_categories": [
-                    {"category": c[0], "avg_amount": float(c[1]), "frequency": int(c[2])}
-                    for c in categories
-                ] if categories else []
+                    {
+                        "category": (c.get('categoria')),
+                        "avg_amount": float(c.get('avg_amount') or 0),
+                        "frequency": int(c.get('frequency') or 0),
+                    }
+                    for c in (categories_rows or [])
+                ]
             }
         else:
             historical_data = {
