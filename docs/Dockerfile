@@ -5,9 +5,11 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
 
 # Copiar archivos de documentación al directorio de Nginx
-COPY documentation.html /usr/share/nginx/html/
-COPY PLANES_FINANCIEROS.md /usr/share/nginx/html/
-COPY *.png /usr/share/nginx/html/
+COPY documentation.html /usr/share/nginx/html/index.html
+COPY documentation.html /usr/share/nginx/html/documentation.html
+COPY image_1.png /usr/share/nginx/html/
+COPY image_2.png /usr/share/nginx/html/
+COPY image_3.png /usr/share/nginx/html/
 
 # Copiar configuración personalizada de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
