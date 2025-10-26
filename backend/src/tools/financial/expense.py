@@ -24,7 +24,7 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
 
         query = """
             SELECT categoria, SUM(monto), COUNT(*)
-            FROM transacciones
+            FROM finanzas_empresa
             WHERE tipo = 'gasto'
             AND fecha >= %s
             AND fecha <= %s
