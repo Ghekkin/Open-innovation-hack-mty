@@ -572,8 +572,8 @@ export default function DashboardPage() {
                     data={expensesByCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={90}
+                    innerRadius={55}
+                    outerRadius={105}
                     paddingAngle={2}
                     dataKey="total"
                     nameKey="categoria"
