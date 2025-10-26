@@ -195,7 +195,7 @@ export default function Home() {
                     <InputAdornment position="start">
                       <PersonIcon sx={{ color: "primary.main" }} />
                     </InputAdornment>
-                  ),
+                  )
                 }}
                 sx={{ 
                   mb: 3,
@@ -206,6 +206,19 @@ export default function Home() {
                     "&.Mui-focused fieldset": {
                       borderColor: "primary.main",
                     }
+                  },
+                  "& input:-webkit-autofill": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                    WebkitTextFillColor: "inherit",
+                  },
+                  "& input:-webkit-autofill:hover": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                  },
+                  "& input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                  },
+                  "& input:-webkit-autofill:active": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
                   }
                 }}
               />
@@ -233,6 +246,7 @@ export default function Home() {
                       </IconButton>
                     </InputAdornment>
                   ),
+                  sx: { pl: 1.5 }
                 }}
                 sx={{ 
                   mb: 4,
@@ -243,6 +257,19 @@ export default function Home() {
                     "&.Mui-focused fieldset": {
                       borderColor: "primary.main",
                     }
+                  },
+                  "& input:-webkit-autofill": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                    WebkitTextFillColor: "inherit",
+                  },
+                  "& input:-webkit-autofill:hover": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                  },
+                  "& input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
+                  },
+                  "& input:-webkit-autofill:active": {
+                    WebkitBoxShadow: "0 0 0 100px white inset",
                   }
                 }}
               />

@@ -73,10 +73,10 @@ export default function DashboardPage() {
     setIsLoading(true);
     try {
       // Obtener company_id del localStorage o usar EMPRESA001 por defecto
-      const companyId = localStorage.getItem("banorte_company_id") || "E039";
+      const companyId = localStorage.getItem("banorte_username") || "E001";
       
       // Llamar al endpoint de la API
-      const response = await fetch(`/api/financial_data?company_id=${companyId}`);
+      const response = await fetch(`/api/financial_data/?company_id=${companyId}`);
       
       if (!response.ok) {
         throw new Error('Error al cargar datos financieros');
