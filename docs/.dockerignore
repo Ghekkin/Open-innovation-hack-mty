@@ -6,8 +6,6 @@ Thumbs.db
 *.ps1
 *.yaml
 docker-compose.yml
-Dockerfile
-nginx.conf
 README.md
 CHECKLIST_DESPLIEGUE.md
 DESPLIEGUE_RAPIDO.md
@@ -15,4 +13,5 @@ INSTRUCCIONES_COOLIFY.md
 nixpacks.toml
 .coolify
 .coolify.yaml
+PLANES_FINANCIEROS.md
 
