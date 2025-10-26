@@ -152,7 +152,15 @@ export default function FinancialPlanPage() {
 
     try {
       // Obtener información del usuario del localStorage
-      const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+      const userInfo = JSON.parse(localStorage.getItem("banorte_user") || "{}");
+      
+      console.log("[Plan Financiero] UserInfo obtenido:", userInfo);
+
+      // Validar que tengamos la información del usuario si se van a usar datos guardados
+      if (planOption === "saved" && (!userInfo.userId || !userInfo.type)) {
+        setError("No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.");
+        return;
+      }
 
       const response = await fetch("/api/financial-plan", {
         method: "POST",
@@ -170,12 +178,22 @@ export default function FinancialPlanPage() {
 
       const data = await response.json();
 
+      console.log("[Plan Financiero] Respuesta completa del API:", data);
+      console.log("[Plan Financiero] data.plan:", data.plan);
+      console.log("[Plan Financiero] Tipo de data.plan:", typeof data.plan);
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Error al generar el plan financiero");
       }
 
       // Guardar el plan en localStorage y redirigir a la página de resultados
+      console.log("[Plan Financiero] Guardando plan en localStorage:", data.plan);
       localStorage.setItem("financialPlan", JSON.stringify(data.plan));
+      
+      // Verificar que se guardó correctamente
+      const savedPlan = localStorage.getItem("financialPlan");
+      console.log("[Plan Financiero] Plan guardado verificado:", savedPlan);
+      
       router.push("/dashboard/plan-financiero/resultado");
 
     } catch (err) {

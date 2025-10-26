@@ -77,7 +77,9 @@ async function generateFinancialPlanMCP(params: {
     });
 
     if (!response.ok) {
-      throw new Error(`Error MCP: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[MCP Client] Error response:', errorText);
+      throw new Error(`Error MCP: ${response.status} - ${errorText}`);
     }
 
     const text = await response.text();
@@ -100,7 +102,20 @@ async function generateFinancialPlanMCP(params: {
       throw new Error(data.error.message);
     }
 
-    return data.result;
+    // FastMCP retorna el resultado en data.result que puede ser:
+    // 1. Directamente el objeto (si FastMCP lo serializa automáticamente)
+    // 2. Un objeto con { content: [{ type: "text", text: "..." }] } (protocolo MCP estándar)
+    let finalResult = data.result;
+    
+    // Si el resultado tiene la estructura de MCP con content array
+    if (finalResult && finalResult.content && Array.isArray(finalResult.content)) {
+      const textContent = finalResult.content.find((c: any) => c.type === 'text');
+      if (textContent && textContent.text) {
+        finalResult = JSON.parse(textContent.text);
+      }
+    }
+    
+    return finalResult;
   } catch (error) {
     console.error('Error al generar plan financiero:', error);
     throw error;

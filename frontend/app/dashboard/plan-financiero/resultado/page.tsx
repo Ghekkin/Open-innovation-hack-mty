@@ -108,13 +108,27 @@ export default function FinancialPlanResultPage() {
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("financialPlan");
+    console.log("[Resultado] Plan raw desde localStorage (primeros 500 chars):", storedPlan?.substring(0, 500));
+    
     if (storedPlan) {
       try {
         const parsedPlan = JSON.parse(storedPlan);
+        console.log("[Resultado] Plan parseado completo:", parsedPlan);
+        console.log("[Resultado] success:", parsedPlan?.success);
+        console.log("[Resultado] plan_id:", parsedPlan?.plan_id);
+        console.log("[Resultado] current_situation:", parsedPlan?.current_situation);
+        console.log("[Resultado] current_balance:", parsedPlan?.current_situation?.current_balance);
+        console.log("[Resultado] monthly_income:", parsedPlan?.current_situation?.monthly_income);
+        console.log("[Resultado] monthly_expense:", parsedPlan?.current_situation?.monthly_expense);
+        console.log("[Resultado] metrics:", parsedPlan?.metrics);
+        console.log("[Resultado] projections length:", parsedPlan?.projections?.length);
+        console.log("[Resultado] projections:", parsedPlan?.projections);
         setPlan(parsedPlan);
       } catch (error) {
         console.error("Error al parsear el plan:", error);
       }
+    } else {
+      console.log("[Resultado] No hay plan en localStorage");
     }
     setLoading(false);
   }, []);
@@ -203,16 +217,18 @@ export default function FinancialPlanResultPage() {
           Tu Plan Financiero Personalizado
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Generado el {new Date(plan.generated_at).toLocaleDateString("es-MX", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          Generado el {plan.generated_at && !isNaN(new Date(plan.generated_at).getTime()) 
+            ? new Date(plan.generated_at).toLocaleDateString("es-MX", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "Fecha no disponible"}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          ID del Plan: {plan.plan_id}
+          ID del Plan: {plan.plan_id || "N/A"}
         </Typography>
       </Box>
 
@@ -297,7 +313,7 @@ export default function FinancialPlanResultPage() {
                 </Typography>
               </Box>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {formatCurrency(plan.current_situation.current_balance)}
+                {formatCurrency(plan.current_situation?.current_balance || 0)}
               </Typography>
             </CardContent>
           </Card>
@@ -312,14 +328,14 @@ export default function FinancialPlanResultPage() {
                   Tasa de Ahorro
                 </Typography>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: "bold", color: plan.metrics.savings_rate >= 20 ? "success.main" : plan.metrics.savings_rate >= 10 ? "warning.main" : "error.main" }}>
-                {plan.metrics.savings_rate.toFixed(1)}%
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: (plan.metrics?.savings_rate || 0) >= 20 ? "success.main" : (plan.metrics?.savings_rate || 0) >= 10 ? "warning.main" : "error.main" }}>
+                {(plan.metrics?.savings_rate || 0).toFixed(1)}%
               </Typography>
               <LinearProgress
                 variant="determinate"
-                value={Math.min(plan.metrics.savings_rate, 100)}
+                value={Math.min(plan.metrics?.savings_rate || 0, 100)}
                 sx={{ mt: 1, height: 8, borderRadius: 4 }}
-                color={plan.metrics.savings_rate >= 20 ? "success" : plan.metrics.savings_rate >= 10 ? "warning" : "error"}
+                color={(plan.metrics?.savings_rate || 0) >= 20 ? "success" : (plan.metrics?.savings_rate || 0) >= 10 ? "warning" : "error"}
               />
             </CardContent>
           </Card>
@@ -334,8 +350,8 @@ export default function FinancialPlanResultPage() {
                   Ahorro Mensual
                 </Typography>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: "bold", color: plan.current_situation.monthly_net >= 0 ? "success.main" : "error.main" }}>
-                {formatCurrency(plan.current_situation.monthly_net)}
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: (plan.current_situation?.monthly_net || 0) >= 0 ? "success.main" : "error.main" }}>
+                {formatCurrency(plan.current_situation?.monthly_net || 0)}
               </Typography>
             </CardContent>
           </Card>
@@ -351,10 +367,10 @@ export default function FinancialPlanResultPage() {
                 </Typography>
               </Box>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {plan.metrics.emergency_fund_months.toFixed(1)} meses
+                {(plan.metrics?.emergency_fund_months || 0).toFixed(1)} meses
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {plan.metrics.emergency_fund_months >= 6 ? "Excelente" : plan.metrics.emergency_fund_months >= 3 ? "Adecuado" : "Insuficiente"}
+                {(plan.metrics?.emergency_fund_months || 0) >= 6 ? "Excelente" : (plan.metrics?.emergency_fund_months || 0) >= 3 ? "Adecuado" : "Insuficiente"}
               </Typography>
             </CardContent>
           </Card>
@@ -374,7 +390,7 @@ export default function FinancialPlanResultPage() {
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: "bold", color: "success.main" }}>
                 <TrendingUp sx={{ verticalAlign: "middle", mr: 0.5 }} />
-                {formatCurrency(plan.current_situation.monthly_income)}
+                {formatCurrency(plan.current_situation?.monthly_income || 0)}
               </Typography>
             </Box>
           </Box>
@@ -385,7 +401,7 @@ export default function FinancialPlanResultPage() {
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: "bold", color: "error.main" }}>
                 <TrendingDown sx={{ verticalAlign: "middle", mr: 0.5 }} />
-                {formatCurrency(plan.current_situation.monthly_expense)}
+                {formatCurrency(plan.current_situation?.monthly_expense || 0)}
               </Typography>
             </Box>
           </Box>
@@ -394,17 +410,17 @@ export default function FinancialPlanResultPage() {
               <Typography variant="body2" color="text.secondary">
                 Balance Mensual
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: "bold", color: plan.current_situation.monthly_net >= 0 ? "success.main" : "error.main" }}>
-                {formatCurrency(plan.current_situation.monthly_net)}
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: (plan.current_situation?.monthly_net || 0) >= 0 ? "success.main" : "error.main" }}>
+                {formatCurrency(plan.current_situation?.monthly_net || 0)}
               </Typography>
             </Box>
           </Box>
         </Box>
-        {plan.current_situation.from_historical && (
+        {plan.current_situation?.from_historical && (
           <Alert severity="info" sx={{ mt: 2 }}>
             Este análisis incluye tus datos históricos guardados
-            {plan.current_situation.additional_incomes_count > 0 && ` + ${plan.current_situation.additional_incomes_count} ingreso(s) adicional(es)`}
-            {plan.current_situation.additional_expenses_count > 0 && ` + ${plan.current_situation.additional_expenses_count} gasto(s) adicional(es)`}
+            {(plan.current_situation?.additional_incomes_count || 0) > 0 && ` + ${plan.current_situation?.additional_incomes_count} ingreso(s) adicional(es)`}
+            {(plan.current_situation?.additional_expenses_count || 0) > 0 && ` + ${plan.current_situation?.additional_expenses_count} gasto(s) adicional(es)`}
           </Alert>
         )}
       </Paper>
@@ -412,36 +428,44 @@ export default function FinancialPlanResultPage() {
       {/* Proyección Financiera */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-          Proyección a {plan.planning_horizon_months} Meses
+          Proyección a {plan.planning_horizon_months || 12} Meses
         </Typography>
-        <Box className="projection-chart">
-          {plan.projections.map((proj, index) => (
-            <Box key={index} className="projection-bar">
-              <Box
-                className={`bar ${proj.balance >= 0 ? "positive" : "negative"}`}
-                sx={{
-                  height: `${Math.min(Math.abs(proj.balance) / Math.max(...plan.projections.map(p => Math.abs(p.balance))) * 100, 100)}%`,
-                  minHeight: "20px",
-                }}
-              >
-                <Typography variant="caption" sx={{ color: "white", fontWeight: "bold" }}>
-                  {formatCurrency(proj.balance)}
+        {plan.projections && plan.projections.length > 0 ? (
+          <>
+            <Box className="projection-chart">
+              {plan.projections.map((proj, index) => (
+                <Box key={index} className="projection-bar">
+                  <Box
+                    className={`bar ${proj.balance >= 0 ? "positive" : "negative"}`}
+                    sx={{
+                      height: `${Math.min(Math.abs(proj.balance) / Math.max(...plan.projections.map(p => Math.abs(p.balance))) * 100, 100)}%`,
+                      minHeight: "20px",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: "white", fontWeight: "bold" }}>
+                      {formatCurrency(proj.balance)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ mt: 1, display: "block" }}>
+                    Mes {proj.month}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                Balance proyectado al final del período: 
+                <Typography component="span" sx={{ fontWeight: "bold", ml: 1, color: plan.projections[plan.projections.length - 1].balance >= 0 ? "success.main" : "error.main" }}>
+                  {formatCurrency(plan.projections[plan.projections.length - 1].balance)}
                 </Typography>
-              </Box>
-              <Typography variant="caption" sx={{ mt: 1, display: "block" }}>
-                Mes {proj.month}
               </Typography>
             </Box>
-          ))}
-        </Box>
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            Balance proyectado al final del período: 
-            <Typography component="span" sx={{ fontWeight: "bold", ml: 1, color: plan.projections[plan.projections.length - 1].balance >= 0 ? "success.main" : "error.main" }}>
-              {formatCurrency(plan.projections[plan.projections.length - 1].balance)}
-            </Typography>
-          </Typography>
-        </Box>
+          </>
+        ) : (
+          <Alert severity="info">
+            No hay proyecciones disponibles en este momento.
+          </Alert>
+        )}
       </Paper>
 
       {/* Recomendaciones */}
