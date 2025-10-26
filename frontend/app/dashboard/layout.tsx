@@ -148,11 +148,11 @@ export default function DashboardLayout({
             justifyContent: "center",
             alignItems: "center",
             p: 2,
-            bgcolor: "primary.main",
+            bgcolor: "#C00020",
             transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
             cursor: "pointer",
-            minHeight: 70,
-            maxHeight: 70,
+            minHeight: 90,
+            maxHeight: 90,
             borderBottom: "1px solid rgba(255,255,255,0.12)",
             overflow: "hidden",
           }}
@@ -161,13 +161,13 @@ export default function DashboardLayout({
             <Image
               src={desktopCollapsed ? "/banorte-icon.png" : "/logo-banorte.png"}
               alt="Banorte Logo"
-              width={desktopCollapsed ? 32 : 120}
-              height={desktopCollapsed ? 32 : 60}
+              width={desktopCollapsed ? 40 : 160}
+              height={desktopCollapsed ? 40 : 80}
               style={{
                 filter: "brightness(0) invert(1)",
                 transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-                maxWidth: desktopCollapsed ? "32px" : "120px",
-                maxHeight: desktopCollapsed ? "32px" : "60px",
+                maxWidth: desktopCollapsed ? "40px" : "160px",
+                maxHeight: desktopCollapsed ? "40px" : "80px",
                 width: "auto",
                 height: "auto",
                 objectFit: "contain",
@@ -388,10 +388,8 @@ export default function DashboardLayout({
                 "& .MuiDrawer-paper": {
                   boxSizing: "border-box",
                   width: currentDrawerWidth,
-                  bgcolor: "#eb0029",
-                  backgroundImage: "url(/navigation.png)",
-                  backgroundRepeat: "repeat-x",
-                  backgroundSize: "43.5px 64px",
+                  bgcolor: "#C00020",
+                  backgroundImage: "none",
                   borderRight: "1px solid rgba(0, 0, 0, 0.12)",
                   transition: "width 0.3s ease-in-out",
                   overflowX: "hidden",
