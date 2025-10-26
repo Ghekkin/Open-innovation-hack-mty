@@ -57,7 +57,7 @@ def generate_financial_plan_tool(
                     AVG(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as avg_expense
                 FROM {table}
                 WHERE {id_column} = %s 
-                AND fecha >= NOW() - INTERVAL '6 months'
+                AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
             """
             avg_result = db.execute_query(avg_query, (entity_id,), fetch='one')
             avg_monthly_income = float(avg_result[0]) if avg_result and avg_result[0] else 0
@@ -69,7 +69,7 @@ def generate_financial_plan_tool(
                 FROM {table}
                 WHERE {id_column} = %s 
                 AND tipo = 'gasto'
-                AND fecha >= NOW() - INTERVAL '6 months'
+                AND fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
                 GROUP BY categoria
                 ORDER BY avg_amount DESC
             """
