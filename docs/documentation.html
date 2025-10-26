@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MCP Financiero - Documentación Detallada del Proyecto</title>
+  <style>
+    :root { 
+      --bg: #0a0e1a;
+      --card: #151925;
+      --card-hover: #1d2230;
+      --accent: #ed1c24;
+      --accent-glow: rgba(237, 28, 36, 0.3);
+      --secondary: #00a3e0;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --border: rgba(148, 163, 184, 0.1);
+      --nav-height: 70px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      line-height: 1.7; 
+      color: var(--text); 
+      background: var(--bg);
+      padding-top: var(--nav-height);
+      overflow-x: hidden;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(237, 28, 36, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 163, 224, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .nav-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: rgba(10, 14, 26, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-container.scrolled {
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+    
+    .nav-content::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .nav-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .nav-content::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 4px;
+    }
+    
+    .nav-brand {
+      font-size: 1.3em;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+      margin-right: auto;
+    }
+    
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95em;
+      font-weight: 500;
+      white-space: nowrap;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+    
+    .nav-link:hover {
+      color: var(--accent);
+      background: rgba(237, 28, 36, 0.05);
+    }
+    
+    .nav-link.active {
+      color: var(--accent);
+      background: rgba(237, 28, 36, 0.1);
+    }
+    
+    .nav-link.active::before {
+      width: 80%;
+    }
+    
+    header { 
+      margin: 60px 0 40px;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 3.5em;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.8s ease;
+    }
+    
+    header p {
+      font-size: 1.2em;
+      color: var(--muted);
+      max-width: 800px;
+      margin: 0 auto;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+    
+    section {
+      background: var(--card);
+      padding: 48px;
+      margin-bottom: 32px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.8s ease both;
+      position: relative;
+      overflow: hidden;
+      scroll-margin-top: calc(var(--nav-height) + 20px);
+    }
+    
+    section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+    
+    section:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+      border-color: rgba(237, 28, 36, 0.3);
+    }
+    
+    h2 {
+      color: var(--accent);
+      font-size: 2em;
+      font-weight: 700;
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+    }
+    
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 80px;
+      height: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    
+    h3 {
+      color: var(--text);
+      font-size: 1.5em;
+      font-weight: 600;
+      margin: 32px 0 16px;
+    }
+    
+    h4 {
+      color: var(--accent);
+      font-size: 1.2em;
+      font-weight: 600;
+      margin: 24px 0 12px;
+    }
+    
+    p {
+      margin-bottom: 20px;
+      line-height: 1.8;
+    }
+    
+    ul, ol {
+      margin: 20px 0;
+      padding-left: 24px;
+    }
+    
+    li {
+      margin: 12px 0;
+      line-height: 1.7;
+    }
+    
+    li strong {
+      color: var(--accent);
+    }
+    
+    li p {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+    
+    pre {
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 24px;
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin: 24px 0;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    code {
+      background: rgba(237, 28, 36, 0.1);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.9em;
+      border: 1px solid rgba(237, 28, 36, 0.2);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    th, td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      background: rgba(237, 28, 36, 0.1);
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85em;
+      letter-spacing: 0.5px;
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    tr:hover {
+      background: rgba(237, 28, 36, 0.05);
+    }
+    
+    .note {
+      background: rgba(0, 163, 224, 0.1);
+      border-left: 4px solid var(--secondary);
+      padding: 20px 24px;
+      margin: 24px 0;
+      border-radius: 8px;
+    }
+    
+    .note strong {
+      color: var(--secondary);
+      font-size: 1.1em;
+    }
+    
+    .challenge-solution {
+      margin: 24px 0;
+    }
+    
+    .challenge-solution h4 {
+      padding: 12px 20px;
+      background: rgba(237, 28, 36, 0.1);
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      margin-bottom: 16px;
+    }
+    
+    .mobile-preview {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 32px;
+      border-radius: 16px;
+      margin: 32px 0;
+    }
+    
+    .mobile-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: center;
+      margin: 40px 0;
+      padding: 20px;
+    }
+    
+    .mobile-gallery-item {
+      flex: 0 1 300px;
+      background: var(--card-hover);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      transition: all 0.4s ease;
+      position: relative;
+    }
+    
+    .mobile-gallery-item:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: var(--accent);
+      box-shadow: 0 30px 60px rgba(237, 28, 36, 0.2);
+    }
+    
+    .mobile-gallery-item img {
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+      object-position: top;
+      display: block;
+      border-bottom: 2px solid var(--border);
+      transition: transform 0.4s ease, filter 0.4s ease;
+    }
+
+    .mobile-gallery-item:hover img {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+    
+    .mobile-gallery-item .content {
+      padding: 24px;
+      font-size: 0.95em;
+      color: var(--muted);
+      margin-bottom: 0;
+      line-height: 1.6;
+      background: var(--card);
+    }
+
+    .mobile-gallery-item .content strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+    }
+    
+    .mobile-gallery-item p strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+    }
+    
+    .testing-tools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+    
+    .tool-section {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+    
+    .tool-section:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 10px 30px rgba(237, 28, 36, 0.2);
+    }
+    
+    .tool-section h5 {
+      color: var(--accent);
+      margin: 0 0 16px;
+      font-size: 1.1em;
+    }
+    
+    .emphasis {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 48px 0;
+      margin-top: 48px;
+      border-top: 1px solid var(--border);
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5em;
+      }
+      
+      section {
+        padding: 32px 24px;
+      }
+      
+      .nav-brand {
+        font-size: 1.1em;
+      }
+      
+      .testing-tools {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav-container">
+    <div class="nav-content">
+      <div class="nav-brand">MCP Financiero</div>
+      <a href="#vista-general" class="nav-link">Vista General</a>
+      <a href="#arquitectura-bd" class="nav-link">Base de Datos</a>
+      <a href="#backend" class="nav-link">Backend</a>
+      <a href="#frontend" class="nav-link">Frontend</a>
+      <a href="#integracion" class="nav-link">Integración</a>
+      <a href="#mobile" class="nav-link">Móvil</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <header>
+      <h1>MCP Financiero</h1>
+      <p>Una solución innovadora desarrollada para el Reto Banorte que transforma la manera en que tomamos decisiones financieras mediante inteligencia artificial y análisis de datos en tiempo real.</p>
+    </header>
+
+    <section id="vista-general">
+      <h2>Vista General del Proyecto</h2>
+      
+      <h3>¿Qué es MCP Financiero?</h3>
+      <p>MCP Financiero es una herramienta financiera inteligente nacida como respuesta al Reto Banorte, con el objetivo de revolucionar la toma de decisiones financieras mediante el uso de inteligencia artificial y datos reales. La solución combina la potencia del protocolo MCP (Model Context Protocol) en el backend con la modernidad de Next.js en el frontend, creando una experiencia única que va más allá de los dashboards tradicionales.</p>
+      
+      <p>En el corazón de nuestra aplicación se encuentra un sofisticado motor de análisis financiero que procesa datos en tiempo real. Este procesamiento utiliza algoritmos avanzados para:</p>
+      <ul>
+        <li><strong>Detectar patrones</strong> en transacciones financieras y comportamientos de gasto</li>
+        <li><strong>Identificar tendencias</strong> de gastos e ingresos con precisión predictiva</li>
+        <li><strong>Generar proyecciones</strong> financieras basadas en datos históricos</li>
+        <li><strong>Evaluar riesgos</strong> y oportunidades de inversión de manera proactiva</li>
+        <li><strong>Ofrecer recomendaciones</strong> personalizadas según el perfil del usuario</li>
+      </ul>
+      
+      <p>La verdadera fortaleza de MCP Financiero radica en su enfoque dual: puede funcionar tanto como un asistente financiero con IA que responde consultas y entrega recomendaciones personalizadas, como un potente simulador financiero "What-If" que permite proyectar escenarios futuros y anticipar impactos.</p>
+
+      <h3>Problemática y Solución</h3>
+      
+      <div class="challenge-solution">
+        <h4>Retos Actuales</h4>
+        <ul>
+          <li>
+            <strong>Datos dispersos y difíciles de interpretar</strong>
+            <p>Aunque las empresas y personas tienen acceso a datos financieros, estos suelen estar dispersos y son difíciles de interpretar de manera significativa.</p>
+          </li>
+          <li>
+            <strong>Falta de claridad para decidir</strong>
+            <p>Los usuarios frecuentemente enfrentan incertidumbre al tomar decisiones importantes como inversiones, contrataciones o recortes.</p>
+          </li>
+          <li>
+            <strong>Herramientas poco interactivas</strong>
+            <p>Los dashboards tradicionales son pasivos y carecen de contexto o recomendaciones accionables.</p>
+          </li>
+          <li>
+            <strong>Ausencia de IA contextual</strong>
+            <p>No existe una forma natural de "conversar" con las finanzas como si se tuviera un asesor experto al lado.</p>
+          </li>
+        </ul>
+
+        <h4>Nuestra Solución</h4>
+        <ul>
+          <li>
+            <strong>Integración Inteligente de Datos</strong>
+            <p>Centralizamos y procesamos datos financieros de múltiples fuentes, proporcionando una vista unificada y coherente.</p>
+          </li>
+          <li>
+            <strong>Asistente Financiero con IA</strong>
+            <p>Sistema conversacional que permite hacer preguntas en lenguaje natural y recibir respuestas contextualizadas.</p>
+          </li>
+          <li>
+            <strong>Simulación Proactiva</strong>
+            <p>Herramientas de simulación "what-if" que permiten anticipar escenarios y sus impactos.</p>
+          </li>
+          <li>
+            <strong>Visualización Accionable</strong>
+            <p>Dashboards que no solo muestran datos, sino que guían hacia decisiones informadas.</p>
+          </li>
+        </ul>
+      </div>
+
+      <h3>Impacto y Alcance</h3>
+      <p>MCP Financiero está diseñado para tener un impacto significativo en diferentes niveles:</p>
+      <ul>
+        <li><strong>Usuarios Individuales</strong> — Comprensión clara de finanzas personales con guía personalizada</li>
+        <li><strong>PyMEs</strong> — Acceso a herramientas de análisis profesional antes reservadas para grandes empresas</li>
+        <li><strong>Grandes Empresas</strong> — Análisis predictivo avanzado para optimizar operaciones estratégicas</li>
+      </ul>
+    </section>
+
+    <section id="arquitectura-bd">
+      <h2>Arquitectura de Base de Datos</h2>
+      
+      <h3>Diseño y Estructura</h3>
+      <p>En el núcleo de MCP Financiero se encuentra una robusta arquitectura de base de datos implementada en MySQL 8.0+. La elección de MySQL no es casual: su combinación de rendimiento, confiabilidad y amplia adopción en la industria lo convierte en la opción ideal para nuestras necesidades.</p>
+
+      <p>La base de datos está diseñada con un enfoque dual, separando cuidadosamente los datos financieros empresariales de los personales. Esta separación nos permite implementar políticas de privacidad y seguridad específicas para cada tipo de dato, y facilita la implementación de análisis especializados.</p>
+
+      <h3>Tablas Principales</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Tabla</th>
+            <th>Campos Clave</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>transacciones_empresa</td>
+            <td>id_empresa, fecha, tipo_operacion, categoria, monto</td>
+            <td>Almacena todas las transacciones empresariales con clasificación por categoría</td>
+          </tr>
+          <tr>
+            <td>transacciones_personales</td>
+            <td>id_usuario, fecha, categoria, monto</td>
+            <td>Registra transacciones individuales con enfoque en gestión personal</td>
+          </tr>
+          <tr>
+            <td>presupuestos</td>
+            <td>id_empresa, mes, año, categoria, monto_presupuestado</td>
+            <td>Define presupuestos planificados para comparativas con gastos reales</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>Importante:</strong> Las fechas se almacenan en formato UTC para consistencia en análisis temporales, y los montos se guardan como DECIMAL(15,2) para precisión en cálculos financieros.
+      </div>
+
+      <h3>Flujo de Datos</h3>
+      <p>Cuando el frontend solicita información financiera, el proceso sigue estos pasos:</p>
+      <ol>
+        <li><span class="emphasis">Solicitud inicial:</span> El cliente envía una petición JSON-RPC al servidor MCP</li>
+        <li><span class="emphasis">Procesamiento MCP:</span> El servidor valida la petición y la enruta a la herramienta correspondiente</li>
+        <li><span class="emphasis">Consulta a BD:</span> Se ejecutan las queries necesarias, optimizadas con índices</li>
+        <li><span class="emphasis">Transformación:</span> Los datos se procesan y se aplica la lógica de negocio</li>
+        <li><span class="emphasis">Respuesta:</span> Se devuelve un JSON con los resultados procesados</li>
+      </ol>
+    </section>
+
+    <section id="backend">
+      <h2>Backend (Servidor MCP)</h2>
+      
+      <h3>Configuración del Entorno</h3>
+      <p>El backend está construido sobre Python utilizando el protocolo MCP. Para configurarlo:</p>
+      <pre>cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt</pre>
+
+      <div class="note">
+        <strong>Requisitos previos:</strong>
+        <ul>
+          <li>Python 3.11 o superior instalado</li>
+          <li>MySQL 8.0+ instalado y configurado</li>
+          <li>Acceso a las credenciales de la base de datos</li>
+        </ul>
+      </div>
+
+      <h3>Estructura del Backend</h3>
+      <p>El backend está diseñado siguiendo principios de arquitectura limpia y modularidad:</p>
+
+      <ul>
+        <li>
+          <code>src/mcp_server.py</code>
+          <p>Punto de entrada principal que maneja todas las peticiones JSON-RPC, autenticación y balanceo de carga.</p>
+        </li>
+        <li>
+          <code>src/database/</code>
+          <p>Encapsula toda la lógica de interacción con la base de datos usando patrones Repository y Unit of Work.</p>
+        </li>
+        <li>
+          <code>src/tools/</code>
+          <p>Contiene la lógica de negocio principal: análisis financiero, proyecciones y evaluación de riesgos.</p>
+        </li>
+        <li>
+          <code>src/utils/</code>
+          <p>Utilidades compartidas: logging, validación, métricas y funciones auxiliares.</p>
+        </li>
+      </ul>
+
+      <h3>Herramientas MCP Disponibles</h3>
+      <p>El servidor expone varias herramientas financieras a través del protocolo MCP:</p>
+      <ul>
+        <li><strong>balance_tools</strong> — Cálculo de balances y estados financieros</li>
+        <li><strong>projection_tools</strong> — Proyecciones y análisis predictivo</li>
+        <li><strong>risk_tools</strong> — Evaluación de riesgos financieros</li>
+        <li><strong>budget_tools</strong> — Comparativa y seguimiento de presupuestos</li>
+      </ul>
+    </section>
+
+    <section id="frontend">
+      <h2>Frontend (Next.js)</h2>
+      
+      <h3>Instalación y Configuración</h3>
+      <p>El frontend está construido con Next.js 16, React 19 y Tailwind CSS:</p>
+      <pre>cd frontend
+npm install
+npm run dev</pre>
+
+      <h3>Arquitectura Frontend</h3>
+      <p>La aplicación está estructurada siguiendo las mejores prácticas de Next.js:</p>
+      <ul>
+        <li><code>app/</code> — Componentes y páginas principales usando App Router</li>
+        <li><code>app/api/</code> — Endpoints de API y comunicación con el backend</li>
+        <li><code>app/dashboard/</code> — Vistas principales del dashboard financiero</li>
+        <li><code>app/components/</code> — Componentes reutilizables de UI</li>
+      </ul>
+
+      <h3>Características Principales</h3>
+      <p>El frontend implementa varias características clave:</p>
+      <ul>
+        <li>Dashboard interactivo con gráficos en tiempo real</li>
+        <li>Formularios inteligentes para simulación de escenarios</li>
+        <li>Interfaz adaptativa para dispositivos móviles</li>
+        <li>Caching y optimización de rendimiento</li>
+      </ul>
+    </section>
+
+    <section id="integracion">
+      <h2>Integración y Despliegue</h2>
+      
+      <h3>URLs y Endpoints</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>URL Base</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend</td>
+            <td><code>https://APP_URL_AQUI/</code></td>
+            <td>Interfaz de usuario principal</td>
+          </tr>
+          <tr>
+            <td>Backend</td>
+            <td><code>https://API_URL_AQUI/</code></td>
+            <td>API MCP para procesamiento financiero</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Variables de Entorno</h3>
+      <p>Tanto el backend como el frontend requieren configuración mediante variables de entorno:</p>
+      <pre># Backend (.env)
+DB_HOST=localhost
+DB_USER=usuario
+DB_PASSWORD=contraseña
+DB_NAME=mcp_financial
+
+# Frontend (.env.local)
+NEXT_PUBLIC_API_URL=https://API_URL_AQUI
+NEXT_PUBLIC_APP_ENV=development</pre>
+    </section>
+
+    <section id="mobile">
+      <h2>Vista Móvil</h2>
+      
+      <div class="mobile-preview">
+        <div class="mobile-gallery">
+          <div class="mobile-gallery-item">
+            <img src="image_1.png" alt="Dashboard Principal con Asistente IA" loading="lazy">
+            <div class="content">
+              <strong>Dashboard Principal con Asistente IA</strong>
+              <p>En esta pantalla el usuario visualiza su panorama financiero completo con el Balance Total ($65,000.00), Ingresos ($150,000.00) y Gastos ($85,000.00). El gráfico de barras "Gastos por Categoría" permite identificar rápidamente dónde se concentra el mayor gasto (Nómina siendo el más alto). En la parte superior, el Asistente Financiero IA está listo para responder preguntas como "¿Cómo puedo reducir mis gastos?" ofreciendo análisis instantáneos personalizados.</p>
+            </div>
+          </div>
+          <div class="mobile-gallery-item">
+            <img src="image_2.png" alt="Desglose Detallado de Gastos por Categoría" loading="lazy">
+            <div class="content">
+              <strong>Desglose Detallado de Gastos</strong>
+              <p>Esta vista profundiza en cada categoría de gasto mostrando: Nómina (12 transacciones, $45,000.00, 52.9%), Servicios (8 transacciones, $15,000.00, 17.6%), Compras (25 transacciones, $12,000.00, 14.1%), Transporte (15 transacciones, $8,000.00, 9.4%) y Otros (10 transacciones, $5,000.00, 5.9%). Al pie aparece el "Consejo Financiero" con recomendaciones automáticas como "¡Excelente! Tu balance es positivo. Considera invertir parte de tus ahorros para hacer crecer tu patrimonio."</p>
+            </div>
+          </div>
+          <div class="mobile-gallery-item">
+            <img src="image_3.png" alt="Asistente Virtual Conversacional" loading="lazy">
+            <div class="content">
+              <strong>Chat con Asistente Virtual</strong>
+              <p>Esta pantalla muestra la interfaz conversacional del Asistente Virtual Banorte. El usuario puede enviar mensajes de texto en lenguaje natural desde el campo inferior. El asistente responde con información personalizada, como se muestra en el mensaje: "¡Hola! Soy tu asistente virtual de Banorte. Puedo ayudarte con consultas sobre clientes, saldos, productos bancarios y más. ¿En qué puedo ayudarte hoy?" Esta funcionalidad permite realizar consultas financieras complejas de manera conversacional y obtener respuestas contextualizadas.</p>
+            </div>
+          </div>
+        </div>
