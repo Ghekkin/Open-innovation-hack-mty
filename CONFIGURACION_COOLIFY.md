@@ -1,5 +1,32 @@
 # Configuración en Coolify
 
+## Configuración del Frontend
+
+### Opción 1: Usando Dockerfile (RECOMENDADO)
+
+1. En Coolify, ve a tu aplicación frontend
+2. En **General**:
+   - **Base Directory**: `frontend`
+   - **Build Pack**: `dockerfile`
+   - **Dockerfile Location**: `Dockerfile`
+   - **Port**: `3000`
+
+3. En **Environment Variables**, agrega:
+   ```bash
+   MCP_SERVER_URL=https://tu-backend-url.com
+   NODE_ENV=production
+   ```
+
+### Opción 2: Usando Nixpacks
+
+1. En Coolify, ve a tu aplicación frontend
+2. En **General**:
+   - **Base Directory**: `frontend`
+   - **Build Pack**: `nixpacks`
+   - **Port**: `3000`
+
+3. Asegúrate de que el archivo `frontend/nixpacks.toml` exista
+
 ## Variables de Entorno Requeridas
 
 ### Frontend (Next.js)
