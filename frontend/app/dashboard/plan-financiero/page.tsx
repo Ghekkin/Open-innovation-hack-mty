@@ -516,7 +516,7 @@ export default function FinancialPlanPage() {
           ¿Cuál es la meta de tu plan financiero?
         </Typography>
         <TextField
-          label="Ej: Ahorrar $10,000 en 6 meses, Pagar una deuda de $5,000, Invertir en un fondo..."
+          label="Ej: Ahorrar $10,000 en 6 meses..."
           variant="outlined"
           fullWidth
           multiline
