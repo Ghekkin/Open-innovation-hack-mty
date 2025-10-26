@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 import React, { useState, useEffect } from "react";
 import {
   AppBar,
@@ -394,8 +394,8 @@ export default function DashboardLayout({
               component="div" 
               sx={{ 
                 color: "white",
-                fontSize: "1.5rem",
-                letterSpacing: "0.05em",
+                fontSize: { xs: "1rem", sm: "1.5rem" },
+                letterSpacing: { xs: "0.03em", sm: "0.05em" },
                 fontWeight: "bold",
                 textTransform: "uppercase"
               }}
