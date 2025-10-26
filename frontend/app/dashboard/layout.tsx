@@ -75,7 +75,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(true);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [userType, setUserType] = useState<'empresa' | 'personal' | null>(null);
@@ -233,6 +233,7 @@ export default function DashboardLayout({
             <Tooltip title={desktopCollapsed ? item.text : ""} placement="right">
               <ListItemButton
                 onClick={() => handleNavigation(item.path)}
+                selected={pathname === item.path}
                 sx={{
                   minHeight: desktopCollapsed ? 64 : 60,
                   px: desktopCollapsed ? 2 : 2.5,
@@ -241,15 +242,27 @@ export default function DashboardLayout({
                   borderRadius: desktopCollapsed ? 1 : 0,
                   mx: desktopCollapsed ? 1 : 0,
                   mb: desktopCollapsed ? 1 : 0,
+                  position: "relative",
                   "&:hover": {
                     bgcolor: "rgba(255,255,255,0.1)",
                     transform: desktopCollapsed ? "scale(1.05)" : "none",
                     transition: "all 0.2s ease-in-out",
                   },
                   "&.Mui-selected": {
-                    bgcolor: "rgba(255,255,255,0.15)",
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      left: 0,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "4px",
+                      height: "70%",
+                      backgroundColor: "white",
+                      borderRadius: "0 4px 4px 0"
+                    },
                     "&:hover": {
-                      bgcolor: "rgba(255,255,255,0.2)",
+                      bgcolor: "rgba(255,255,255,0.25)",
                     }
                   }
                 }}
@@ -259,12 +272,19 @@ export default function DashboardLayout({
                   minWidth: desktopCollapsed ? "auto" : 48,
                   mr: desktopCollapsed ? 0 : 2.5,
                   justifyContent: "center",
-                  alignItems: "center"
+                  alignItems: "center",
+                  ".Mui-selected &": {
+                    color: "white",
+                    transform: "scale(1.1)",
+                  }
                 }}>
                   {React.cloneElement(item.icon, {
                     sx: {
                       fontSize: desktopCollapsed ? "1.75rem" : "1.5rem",
-                      transition: "font-size 0.35s cubic-bezier(0.4, 0, 0.2, 1)"
+                      transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+                      ".Mui-selected &": {
+                        filter: "drop-shadow(0 0 8px rgba(255,255,255,0.5))"
+                      }
                     }
                   })}
                 </ListItemIcon>
