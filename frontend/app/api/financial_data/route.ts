@@ -145,36 +145,24 @@ export async function GET(request: NextRequest) {
     const isCompany = entityId && entityId.startsWith('E');
     const isPersonal = entityId && /^\d+$/.test(entityId);
 
-    console.log(`Llamando a MCP tools para ${isCompany ? 'empresa' : 'usuario'}: ${entityId}`);
-
     let balanceData, expensesData;
 
     if (isCompany) {
-      // Llamadas para empresa
-      console.log('Usando herramientas de empresa');
       [balanceData, expensesData] = await Promise.all([
         callMCPTool('get_company_balance', { company_id: entityId }),
         callMCPTool('analyze_expenses_by_category', { company_id: entityId })
       ]);
     } else if (isPersonal) {
-      // Llamadas para usuario personal
-      console.log('Usando herramientas de usuario personal');
       [balanceData, expensesData] = await Promise.all([
         callMCPTool('get_personal_balance', { user_id: entityId }),
         callMCPTool('analyze_expenses_by_category', { user_id: entityId })
       ]);
     } else {
-      // Sin ID, usar empresa por defecto
-      console.log('Sin ID, usando empresa por defecto');
       [balanceData, expensesData] = await Promise.all([
         callMCPTool('get_company_balance', {}),
         callMCPTool('analyze_expenses_by_category', {})
       ]);
     }
-
-    console.log('Balance data:', balanceData);
-    console.log('Expenses data:', expensesData);
-    console.log('Categorías encontradas:', expensesData.data?.categorias?.length || 0);
 
     // Procesar y formatear los datos
     const response = {
@@ -188,8 +176,6 @@ export async function GET(request: NextRequest) {
         total_gastos: expensesData.data?.total_gastos || 0
       }
     };
-
-    console.log('Respuesta final a enviar:', JSON.stringify(response, null, 2));
 
     return NextResponse.json(response);
 

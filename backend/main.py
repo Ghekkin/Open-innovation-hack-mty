@@ -23,7 +23,7 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     
     logger.info("=" * 60)
-    logger.info("🚀 INICIANDO SERVIDOR MCP FINANCIERO SOBRE HTTP")
+    logger.info("INICIANDO SERVIDOR MCP FINANCIERO SOBRE HTTP")
     logger.info("=" * 60)
     logger.info(f"Puerto: {port}")
     logger.info(f"Host: {host}")

@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
       headers['mcp-session-id'] = sessionId;
     }
 
-    console.log(`[MCP] Llamando a ${method}:`, params);
-
     const mcpResponse = await fetch(`${MCP_SERVER_URL}/mcp`, {
       method: 'POST',
       headers,
@@ -59,7 +57,6 @@ export async function POST(request: NextRequest) {
     const newSessionId = mcpResponse.headers.get('mcp-session-id');
     if (newSessionId) {
       sessionId = newSessionId;
-      console.log('[MCP] Session ID guardado:', sessionId);
     }
 
     // Parsear respuesta (SSE o JSON)
@@ -78,8 +75,6 @@ export async function POST(request: NextRequest) {
     } else {
       data = JSON.parse(text);
     }
-
-    console.log('[MCP] Respuesta recibida:', data);
 
     return NextResponse.json({
       success: true,

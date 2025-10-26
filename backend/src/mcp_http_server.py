@@ -535,22 +535,22 @@ def get_current_month_spending(
 def initialize_server():
     """Inicialización del servidor MCP."""
     logger.info("=" * 60)
-    logger.info("🚀 INICIANDO SERVIDOR MCP FINANCIERO SOBRE HTTP")
+    logger.info("INICIANDO SERVIDOR MCP FINANCIERO SOBRE HTTP")
     logger.info("=" * 60)
     
     # Test database connection
     try:
         db = get_db_connection()
         if db.test_connection():
-            logger.info("✅ Conexión a base de datos establecida exitosamente")
+            logger.info("Conexión a base de datos establecida exitosamente")
         else:
-            logger.warning("⚠️ No se pudo conectar a la base de datos")
+            logger.warning("No se pudo conectar a la base de datos")
     except Exception as e:
-        logger.error(f"❌ Error al conectar a la base de datos: {e}")
-        logger.warning("⚠️ El servidor iniciará sin conexión a base de datos")
+        logger.error(f"Error al conectar a la base de datos: {e}")
+        logger.warning("El servidor iniciará sin conexión a base de datos")
     
     logger.info("=" * 60)
-    logger.info("✅ Servidor MCP listo para recibir conexiones")
+    logger.info("Servidor MCP listo para recibir conexiones")
     logger.info("=" * 60)
 
 
@@ -564,9 +564,9 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     host = os.getenv("HOST", "0.0.0.0")
     
-    logger.info(f"🌐 Iniciando servidor en {host}:{port}")
-    logger.info(f"📊 Protocolo: MCP sobre HTTP (streamable-http)")
-    logger.info(f"🔧 Entorno: {os.getenv('ENVIRONMENT', 'development')}")
+    logger.info(f"Iniciando servidor en {host}:{port}")
+    logger.info(f"Protocolo: MCP sobre HTTP (streamable-http)")
+    logger.info(f"Entorno: {os.getenv('ENVIRONMENT', 'development')}")
     
     # Run the MCP server over HTTP
     # streamable-http es el transporte correcto para Coolify y servidores HTTP

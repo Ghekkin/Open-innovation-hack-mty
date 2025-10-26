@@ -197,22 +197,12 @@ export async function POST(request: NextRequest) {
     const userType = userInfo?.type || 'desconocido';
     const userId = userInfo?.userId || '';
     
-    // Log del historial recibido
-    console.log(`[Chat] Historial de conversación: ${conversationHistory?.length || 0} mensajes`);
-
-    // Detectar todas las herramientas MCP necesarias (puede ser más de una)
     const mcpTools = detectMCPTools(message, userType);
     let allMcpData: any[] = [];
     let mcpContext = '';
 
     if (mcpTools.length > 0) {
-      console.log(`[Chat] Detectadas ${mcpTools.length} herramientas MCP:`, mcpTools.map(t => t.tool).join(', '));
-      console.log(`[Chat] URL del servidor MCP: ${MCP_SERVER_URL}`);
-      console.log(`[Chat] Usuario: ${username} (${userType})`);
-      
-      // Llamar a todas las herramientas detectadas
       for (const mcpTool of mcpTools) {
-        // Agregar el ID del usuario a los argumentos del MCP
         const mcpArgs = { ...mcpTool.args };
         if (userType === 'empresa') {
           mcpArgs.company_id = userId;
@@ -223,13 +213,10 @@ export async function POST(request: NextRequest) {
         const mcpData = await callMCPTool(mcpTool.tool, mcpArgs);
         
         if (mcpData) {
-          console.log(`[Chat] Datos recibidos de ${mcpTool.tool}`);
           allMcpData.push({
             tool: mcpTool.tool,
             data: mcpData
           });
-        } else {
-          console.log(`[Chat] No se recibieron datos de ${mcpTool.tool}`);
         }
       }
       
@@ -242,8 +229,6 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    } else {
-      console.log(`[Chat] No se detectaron herramientas MCP para el mensaje: "${message}"`);
     }
 
     // Construir contexto del usuario
@@ -347,8 +332,6 @@ Responde de manera profesional, clara, directa y en español.${userContext}${mcp
       role: 'user',
       parts: [{ text: message }]
     });
-    
-    console.log(`[Chat] Enviando ${geminiContents.length} mensajes a Gemini`);
     
     // Llamada a Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
