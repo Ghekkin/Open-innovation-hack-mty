@@ -445,8 +445,8 @@ export default function DashboardLayout({
             mb: { xs: 10, sm: 0 },
             transition: "width 0.3s ease-in-out, padding 0.3s ease-in-out",
             minHeight: "100vh",
-          }}
-          style={{ "--drawer-width": `${currentDrawerWidth}px` }}
+            "--drawer-width": `${currentDrawerWidth}px`,
+          } as any}
         >
           {children}
         </Box>
