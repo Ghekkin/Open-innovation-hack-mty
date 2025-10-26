@@ -11,7 +11,9 @@ import {
   AccordionSummary,
   AccordionDetails,
   IconButton,
-  Tooltip
+  Tooltip,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Send as SendIcon,
@@ -61,6 +63,15 @@ export default function AsistentePage() {
   const recognitionRef = useRef<any>(null);
   const conversationRecognitionRef = useRef<any>(null); // Para el modo llamada
   const isInCallRef = useRef<boolean>(false); // Ref para el estado de llamada (siempre actualizado)
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
 
   // Cargar historial de conversación al montar el componente
   useEffect(() => {
@@ -908,10 +919,10 @@ export default function AsistentePage() {
 
       {/* Input Area - Fixed at bottom */}
       <Box sx={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        position: "fixed",
+        bottom: { xs: '87px', sm: 0 },
+        left: { xs: 0, sm: 'var(--drawer-width)' },
+        width: { xs: '100%', sm: 'calc(100% - var(--drawer-width))' },
         borderTop: "1px solid",
         borderColor: "grey.200",
         bgcolor: "background.paper",
