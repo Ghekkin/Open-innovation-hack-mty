@@ -38,9 +38,15 @@ def get_financial_health_score_tool(company_id: str = None, user_id: str = None)
         result = db.execute_query(query, tuple(params), fetch='one')
         
         # Manejar diferentes formatos de resultado
-        if isinstance(result, dict):
+        # Caso 1: Lista con un diccionario dentro [{'total_income': X, 'total_expense': Y}]
+        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            total_income = float(result[0].get('total_income') or 0)
+            total_expense = float(result[0].get('total_expense') or 0)
+        # Caso 2: Diccionario directo {'total_income': X, 'total_expense': Y}
+        elif isinstance(result, dict):
             total_income = float(result.get('total_income') or 0)
             total_expense = float(result.get('total_expense') or 0)
+        # Caso 3: Tupla o lista con dos valores (X, Y)
         elif isinstance(result, (list, tuple)) and len(result) >= 2:
             total_income = float(result[0] or 0)
             total_expense = float(result[1] or 0)
