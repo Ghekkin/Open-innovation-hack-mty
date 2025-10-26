@@ -26,6 +26,8 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
             SELECT categoria, SUM(monto), COUNT(*)
             FROM transacciones
             WHERE tipo = 'gasto'
+            AND fecha >= %s
+            AND fecha <= %s
         """
         params.extend([start_date, end_date])
         
@@ -42,21 +44,26 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
             
         total_expenses = sum(e[1] for e in expenses_by_cat)
         
+        categorias = [
+            {
+                "categoria": cat,
+                "total": float(total),
+                "transacciones": count,
+                "porcentaje": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
+            } for cat, total, count in expenses_by_cat
+        ]
+        
         result = {
             "success": True,
-            "period": {
-                "start_date": start_date,
-                "end_date": end_date
+            "data": {
+                "categorias": categorias,
+                "total_gastos": float(total_expenses),
+                "periodo": {
+                    "inicio": start_date,
+                    "fin": end_date
+                }
             },
-            "total_expenses": float(total_expenses),
-            "categories": [
-                {
-                    "category": cat,
-                    "total_spent": float(total),
-                    "transaction_count": count,
-                    "percentage_of_total": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
-                } for cat, total, count in expenses_by_cat
-            ]
+            "message": f"Análisis de gastos obtenido exitosamente para {len(categorias)} categorías"
         }
         return result
         
