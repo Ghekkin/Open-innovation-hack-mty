@@ -32,5 +32,8 @@ export default defineConfig({
 			host: true,
 			allowedHosts: ['*']
 		}
+	},
+	server: {
+		host: true
 	}
 });
