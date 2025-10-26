@@ -8,23 +8,23 @@ from typing import Optional
 from fastmcp import FastMCP
 
 from database import get_db_connection
-from tools import (
-    get_company_balance_tool,
-    get_personal_balance_tool,
-    get_expenses_by_category_tool,
-    get_cash_flow_projection_tool,
-    get_budget_comparison_tool,
-    simulate_scenario_tool,
+from tools.financial.balance import get_company_balance_tool, get_personal_balance_tool
+from tools.financial.expense import get_expenses_by_category_tool
+from tools.financial.projection import get_cash_flow_projection_tool, simulate_scenario_tool
+from tools.financial.budget import get_budget_comparison_tool
+from tools.financial.risk import (
     get_financial_health_score_tool,
+    assess_financial_risk_tool,
+    get_alerts_tool,
+    get_stress_test_tool,
+)
+from tools.financial.analytics import (
     get_spending_trends_tool,
     get_category_recommendations_tool,
     detect_anomalies_tool,
     compare_periods_tool,
-    assess_financial_risk_tool,
-    get_alerts_tool,
-    predict_cash_shortage_tool,
-    get_stress_test_tool
 )
+from tools.financial.predictive import predict_cash_shortage_tool
 from utils import setup_logger
 
 # Setup logger
