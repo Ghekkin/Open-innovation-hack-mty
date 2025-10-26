@@ -367,8 +367,19 @@ export default function DashboardLayout({
             transition: "width 0.3s ease-in-out, margin-left 0.3s ease-in-out",
           }}
         >
-          <Toolbar sx={{ height: "64px" }}>
-            <Typography variant="h6" noWrap component="div" sx={{ color: "white" }} fontWeight="bold">
+          <Toolbar sx={{ height: "64px", py: 2 }}>
+            <Typography 
+              variant="h6" 
+              noWrap 
+              component="div" 
+              sx={{ 
+                color: "white",
+                fontSize: "1.5rem",
+                letterSpacing: "0.05em",
+                fontWeight: "bold",
+                textTransform: "uppercase"
+              }}
+            >
               Asistente Virtual Banorte
             </Typography>
           </Toolbar>
