@@ -32,11 +32,15 @@ def generate_financial_plan_tool(
         Plan financiero completo con proyecciones, recomendaciones y estrategias
     """
     try:
-        logger.info(f"Generando plan financiero para {entity_type} {entity_id}")
-        
+        # Normalizar el tipo de entidad: aceptar 'empresa' o 'company'
+        normalized_type = "company" if str(entity_type).lower() in ("company", "empresa") else "personal"
+        logger.info(f"Generando plan financiero para {normalized_type} {entity_id}")
+
         db = get_db_connection()
-        table = "transacciones_personales" if entity_type == "personal" else "transacciones"
-        id_column = "usuario_id" if entity_type == "personal" else "empresa_id"
+        # Usar tablas reales del esquema MySQL
+        table = "finanzas_personales" if normalized_type == "personal" else "finanzas_empresa"
+        # Columnas de ID reales por esquema
+        id_column = "id_usuario" if normalized_type == "personal" else "empresa_id"
         
         # 1. Obtener datos históricos si use_saved_data es True
         historical_data = {}
@@ -169,7 +173,7 @@ def generate_financial_plan_tool(
             "success": True,
             "plan_id": f"FP-{entity_type[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "generated_at": datetime.now().isoformat(),
-            "entity_type": entity_type,
+            "entity_type": normalized_type,
             "entity_id": entity_id,
             "goal": plan_goal,
             "goal_analysis": goal_analysis,
