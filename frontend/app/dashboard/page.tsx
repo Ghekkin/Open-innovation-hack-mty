@@ -88,9 +88,9 @@ export default function DashboardPage() {
       // Actualizar balance
       if (data.balance) {
         setBalance({
-          ingresos: data.balance.ingresos_totales || 0,
-          gastos: data.balance.gastos_totales || 0,
-          balance: data.balance.balance_total || 0
+          ingresos: data.balance.ingresos || 0,
+          gastos: data.balance.gastos || 0,
+          balance: data.balance.balance || 0
         });
       }
 
