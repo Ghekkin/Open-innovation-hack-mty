@@ -213,10 +213,20 @@ function detectMCPTools(message: string, userType: string): Array<{ tool: string
     }
   }
 
-  // Salud financiera
+  // Salud financiera y sostenibilidad
   if ((lowerMessage.includes('salud') && lowerMessage.includes('financiera')) ||
-      lowerMessage.includes('cómo estoy') || lowerMessage.includes('como estoy')) {
+      lowerMessage.includes('cómo estoy') || lowerMessage.includes('como estoy') ||
+      lowerMessage.includes('sostenible') || lowerMessage.includes('sostenibilidad') ||
+      (lowerMessage.includes('ritmo') && lowerMessage.includes('gasto')) ||
+      lowerMessage.includes('puedo mantener') || lowerMessage.includes('aguantar')) {
     tools.push({ tool: 'get_financial_health_score', args: {} });
+    // Para sostenibilidad, también incluir balance y análisis de gastos
+    if (userType === 'empresa') {
+      tools.push({ tool: 'get_company_balance', args: {} });
+    } else {
+      tools.push({ tool: 'get_personal_balance', args: {} });
+    }
+    tools.push({ tool: 'analyze_expenses_by_category', args: {} });
   }
 
   // Tendencias
@@ -236,9 +246,23 @@ function detectMCPTools(message: string, userType: string): Array<{ tool: string
     tools.push({ tool: 'detect_anomalies', args: {} });
   }
 
-  // Riesgo
-  if (lowerMessage.includes('riesgo')) {
+  // Riesgo y Crisis
+  if (lowerMessage.includes('riesgo') || 
+      lowerMessage.includes('crisis') || lowerMessage.includes('sobrevivir') ||
+      lowerMessage.includes('aguantar') || lowerMessage.includes('resistir') ||
+      (lowerMessage.includes('qué pasaría') && lowerMessage.includes('crisis'))) {
     tools.push({ tool: 'assess_financial_risk', args: {} });
+    // Para crisis, también hacer stress test
+    if (lowerMessage.includes('crisis') || lowerMessage.includes('sobrevivir')) {
+      tools.push({ tool: 'get_stress_test', args: {} });
+      // Incluir balance y gastos para contexto completo
+      if (userType === 'empresa') {
+        tools.push({ tool: 'get_company_balance', args: {} });
+      } else {
+        tools.push({ tool: 'get_personal_balance', args: {} });
+      }
+      tools.push({ tool: 'analyze_expenses_by_category', args: {} });
+    }
   }
 
   // Alertas
@@ -288,8 +312,10 @@ export async function POST(request: NextRequest) {
       console.log(`[Chat] Usuario: ${username} (${userType})`);
       
       let currentBalance = 0;
-      let totalExpenses = 0;
-      let totalIncome = 0;
+      let totalExpenses = 0; // Gastos históricos totales
+      let totalIncome = 0; // Ingresos históricos totales
+      let monthlyExpenses = 0; // Gastos del mes actual (para cálculo de porcentajes)
+      let monthlyIncome = 0; // Ingresos del mes actual (para cálculo de porcentajes)
       
       // Llamar a todas las herramientas detectadas
       for (const mcpTool of mcpTools) {
@@ -300,13 +326,13 @@ export async function POST(request: NextRequest) {
           mcpArgs.user_id = userId;
         }
         
-        // Si es análisis de gastos, guardar el total para porcentajes
+        // Si es análisis de gastos, guardar el total MENSUAL para porcentajes
         if (mcpTool.tool === 'analyze_expenses_by_category') {
           try {
             const expenseData = await callMCPTool(mcpTool.tool, mcpArgs);
             if (expenseData && expenseData.structuredContent) {
-              totalExpenses = expenseData.structuredContent.data?.total_gastos || 0;
-              console.log(`[Chat] Total de gastos obtenido: ${totalExpenses}`);
+              monthlyExpenses = expenseData.structuredContent.data?.total_gastos || 0;
+              console.log(`[Chat] Gastos mensuales obtenidos: ${monthlyExpenses}`);
               allMcpData.push({
                 tool: mcpTool.tool,
                 data: expenseData
@@ -341,22 +367,29 @@ export async function POST(request: NextRequest) {
             const percentageType = mcpArgs._percentageType;
             
             if (percentageType === 'expense') {
-              // Usar gastos totales reales
-              if (totalExpenses > 0) {
-                // Calcular gasto mensual promedio (asumiendo que totalExpenses es histórico)
-                const monthlyExpense = totalExpenses / 12; // Promedio mensual
-                mcpArgs.monthly_expense_change = monthlyExpense * (percentageValue / 100);
-                console.log(`[Chat] Calculado ${percentageValue}% de gastos mensuales (${monthlyExpense}): ${mcpArgs.monthly_expense_change}`);
+              // Usar gastos MENSUALES reales del mes actual
+              if (monthlyExpenses > 0) {
+                mcpArgs.monthly_expense_change = monthlyExpenses * (percentageValue / 100);
+                console.log(`[Chat] Calculado ${percentageValue}% de gastos mensuales (${monthlyExpenses}): ${mcpArgs.monthly_expense_change}`);
+              } else if (totalExpenses > 0) {
+                // Fallback: usar promedio histórico
+                const avgMonthlyExpense = totalExpenses / 12;
+                mcpArgs.monthly_expense_change = avgMonthlyExpense * (percentageValue / 100);
+                console.log(`[Chat] Usando promedio histórico: ${percentageValue}% de ${avgMonthlyExpense}: ${mcpArgs.monthly_expense_change}`);
               } else {
                 console.log(`[Chat] No hay datos de gastos, usando estimación`);
                 mcpArgs.monthly_expense_change = Math.abs(currentBalance * 0.01) * (percentageValue / 100);
               }
             } else {
-              // Usar ingresos totales reales
-              if (totalIncome > 0) {
-                const monthlyIncome = totalIncome / 12; // Promedio mensual
+              // Usar ingresos MENSUALES reales
+              if (monthlyIncome > 0) {
                 mcpArgs.monthly_income_change = monthlyIncome * (percentageValue / 100);
                 console.log(`[Chat] Calculado ${percentageValue}% de ingresos mensuales (${monthlyIncome}): ${mcpArgs.monthly_income_change}`);
+              } else if (totalIncome > 0) {
+                // Fallback: usar promedio histórico
+                const avgMonthlyIncome = totalIncome / 12;
+                mcpArgs.monthly_income_change = avgMonthlyIncome * (percentageValue / 100);
+                console.log(`[Chat] Usando promedio histórico: ${percentageValue}% de ${avgMonthlyIncome}: ${mcpArgs.monthly_income_change}`);
               } else {
                 console.log(`[Chat] No hay datos de ingresos, usando estimación`);
                 mcpArgs.monthly_income_change = Math.abs(currentBalance * 0.01) * (percentageValue / 100);
@@ -476,33 +509,94 @@ REGLAS DE RESPUESTA:
 - Si recibes datos de un plan financiero generado, presenta las recomendaciones clave de forma clara y motivadora.
 
 INTERPRETACIÓN DE SIMULACIONES (WHAT-IF):
-- Cuando recibes datos de "simulate_financial_scenario", tienes una proyección mes a mes del balance.
+- Cuando recibes datos de "simulate_financial_scenario" Y "analyze_expenses_by_category", tienes TODO lo necesario
+- Los datos de gastos mensuales YA están disponibles en "analyze_expenses_by_category"
+- El balance actual YA está disponible en "get_company_balance" o "get_personal_balance"
+- NUNCA digas "necesito que me proporciones los gastos actuales" - ¡YA LOS TIENES!
 - SIEMPRE muestra los resultados de forma visual y clara:
+  * Gastos mensuales actuales (de analyze_expenses_by_category)
+  * Aumento calculado (porcentaje aplicado)
+  * Nuevos gastos mensuales
   * Balance inicial
-  * Cambio mensual (ingresos/gastos)
-  * Balance proyectado en 3 y 6 meses
+  * Proyección de balance mes a mes
   * Si el balance se vuelve negativo, ALERTA INMEDIATA
 - Ejemplo de respuesta:
   "📊 SIMULACIÓN: Si tus gastos suben 20%:
    
-   Gastos actuales: $X/mes
-   Aumento: +$Y (20%)
-   Nuevos gastos: $Z/mes
+   Gastos mensuales actuales: $1,072,203
+   Aumento del 20%: +$214,441
+   Nuevos gastos mensuales: $1,286,644
+   
+   Balance inicial: $1,407,945,036
    
    Proyección de balance:
-   • Mes 3: $A
-   • Mes 6: $B
+   • Mes 1: $1,407,730,595
+   • Mes 3: $1,407,301,713
+   • Mes 6: $1,406,229,467
    
-   ✅ Tu balance se mantiene positivo / ⚠️ Entrarías en números rojos en el mes X"
+   ✅ Tu balance se mantiene positivo y saludable
+   
+   📊 Principales categorías de gasto:
+   1. Infraestructura: $315,173 (29.39%)
+   2. Personal: $310,397 (28.95%)
+   3. Costos: $261,656 (24.40%)"
    
 - NO preguntes al final "¿Te gustaría que analice...?" - Si tienes análisis relevante, INCLÚYELO directamente
 - Si los gastos por categoría son relevantes, MUÉSTRALOS sin preguntar
+
+ANÁLISIS DE SOSTENIBILIDAD:
+- Cuando te pregunten si el negocio es "sostenible" o sobre el "ritmo de gastos":
+  * SIEMPRE incluye TANTO ingresos como gastos en tu análisis
+  * Calcula el margen de ganancia: (Ingresos - Gastos) / Ingresos * 100
+  * Muestra el balance actual y el ratio ingresos/gastos
+  * Si el balance es positivo y el margen > 20%, es sostenible
+  * Si el margen está entre 10-20%, es sostenible pero ajustado
+  * Si el margen < 10%, hay riesgo de sostenibilidad
+  * NUNCA digas "necesito información de ingresos" si ya tienes los datos en este mensaje
+- Ejemplo de respuesta:
+  "📊 ANÁLISIS DE SOSTENIBILIDAD:
+   
+   Ingresos totales: $X
+   Gastos totales: $Y
+   Balance actual: $Z
+   Margen de ganancia: W%
+   
+   Principales categorías de gasto:
+   1. [Categoría]: $A (X%)
+   2. [Categoría]: $B (Y%)
+   
+   ✅ Tu negocio ES sostenible con este ritmo / ⚠️ Necesitas optimizar gastos"
 - Cuando simulas cambios en gastos, SIEMPRE incluye las top 3-5 categorías de gasto para contexto
 - Formato recomendado para categorías:
   "📊 Principales categorías de gasto:
    1. [Categoría]: $X (Y%)
    2. [Categoría]: $X (Y%)
    3. [Categoría]: $X (Y%)"
+
+ANÁLISIS DE CRISIS Y STRESS TEST:
+- Cuando te pregunten sobre "crisis económica", "sobrevivir", o "resistir":
+  * SIEMPRE usa los datos de stress_test, balance y gastos que ya tienes
+  * El stress_test simula: -30% ingresos + 20% gastos durante 6 meses
+  * Muestra el survival_score (0-100) y meses de supervivencia
+  * Explica qué tan resiliente es la empresa/persona
+  * NUNCA pidas información que ya está en este mensaje
+- Ejemplo de respuesta:
+  "🧪 PRUEBA DE ESTRÉS FINANCIERO:
+   
+   Escenario de crisis simulado:
+   • Caída de ingresos: -30%
+   • Aumento de gastos: +20%
+   
+   Balance actual: $X
+   Balance después de 6 meses de crisis: $Y
+   
+   Score de supervivencia: Z/100
+   Meses que aguantarías: W meses
+   
+   ✅ Tu empresa SOBREVIVIRÍA a la crisis / ⚠️ Necesitas fortalecer tu colchón financiero
+   
+   Principales vulnerabilidades:
+   1. [Categoría]: $A (X% del gasto total)"
 
 Responde de manera profesional, clara, directa y en español.${userContext}${mcpContext}`;
 

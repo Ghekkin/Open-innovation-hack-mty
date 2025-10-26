@@ -137,6 +137,22 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
+  // Función para convertir **texto** a negritas
+  const formatTextWithBold = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return (
+          <Box component="span" key={index} sx={{ fontWeight: 'bold' }}>
+            {boldText}
+          </Box>
+        );
+      }
+      return part;
+    });
+  };
+
   const getCategoryColor = (index: number) => {
     const colors = ["#EC0029", "#FF3355", "#C00020", "#6A6867", "#C7C9C9"];
     return colors[index % colors.length];
@@ -399,14 +415,14 @@ export default function DashboardPage() {
               <Box>
                 <Typography 
                   variant="body2" 
-                  component="span"
+                  component="div"
                   sx={{ 
                     whiteSpace: "pre-wrap",
                     lineHeight: 1.6,
                     fontSize: { xs: "0.8rem", sm: "0.875rem" }
                   }}
                 >
-                  {aiResponse}
+                  {formatTextWithBold(aiResponse)}
                 </Typography>
                 {/* Cursor parpadeante cuando está escribiendo */}
                 {isTyping && (

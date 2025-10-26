@@ -7,9 +7,6 @@ import {
   TextField,
   Avatar,
   CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   IconButton,
   Tooltip,
   useTheme,
@@ -19,7 +16,6 @@ import {
   Send as SendIcon,
   SmartToy as AssistantIcon,
   Person as PersonIcon,
-  ExpandMore as ExpandMoreIcon,
   Mic as MicIcon,
   Stop as StopIcon,
   VolumeUp as VolumeUpIcon,
@@ -830,52 +826,6 @@ export default function AsistentePage() {
                       </Tooltip>
                     )}
                   </Box>
-
-                  {/* JSON Accordion */}
-                  {message.rawJson && (
-                    <Accordion
-                      sx={{
-                        mt: 1,
-                        boxShadow: "none",
-                        border: "1px solid",
-                        borderColor: "grey.200",
-                        borderRadius: "12px",
-                        "&:before": { display: "none" },
-                        overflow: "hidden"
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                          minHeight: "auto",
-                          "& .MuiAccordionSummary-content": {
-                            my: 1
-                          }
-                        }}
-                      >
-                        <Typography variant="caption" sx={{ color: "grey.500", fontWeight: 500 }}>
-                          📄 Ver respuesta JSON de la API
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 0 }}>
-                        <Box
-                          sx={{
-                            bgcolor: "#1E1E1E",
-                            color: "#D4D4D4",
-                            p: 2,
-                            maxHeight: "300px",
-                            overflowY: "auto",
-                            fontFamily: "monospace",
-                            fontSize: "0.7rem"
-                          }}
-                        >
-                          <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                            {JSON.stringify(message.rawJson, null, 2)}
-                          </pre>
-                        </Box>
-                      </AccordionDetails>
-                    </Accordion>
-                  )}
 
                   <Typography
                     variant="caption"
