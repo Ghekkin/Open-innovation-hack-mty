@@ -105,6 +105,12 @@ export default function AsistentePage() {
     try {
       const user = getCurrentUser();
       
+      // Preparar el historial de conversación (sin el mensaje actual que ya está en messages)
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -112,6 +118,7 @@ export default function AsistentePage() {
         },
         body: JSON.stringify({ 
           message: userMessage.content,
+          conversationHistory: conversationHistory,
           userInfo: user ? {
             username: user.username,
             type: user.type,
