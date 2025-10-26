@@ -26,8 +26,8 @@ def get_financial_health_score_tool(company_id: str = None, user_id: str = None)
 
         query = f"""
             SELECT 
-                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END),
-                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END)
+                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_income,
+                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_expense
             FROM {table}
         """
         params = []
@@ -35,9 +35,19 @@ def get_financial_health_score_tool(company_id: str = None, user_id: str = None)
             query += f" WHERE {id_col} = %s"
             params.append(entity_id)
             
-        total_income, total_expense = db.execute_query(query, tuple(params), fetch='one')
-        total_income = float(total_income or 0)
-        total_expense = float(total_expense or 0)
+        result = db.execute_query(query, tuple(params), fetch='one')
+        
+        # Manejar diferentes formatos de resultado
+        if isinstance(result, dict):
+            total_income = float(result.get('total_income') or 0)
+            total_expense = float(result.get('total_expense') or 0)
+        elif isinstance(result, (list, tuple)) and len(result) >= 2:
+            total_income = float(result[0] or 0)
+            total_expense = float(result[1] or 0)
+        else:
+            logger.warning(f"Formato de resultado inesperado: {type(result)} - {result}")
+            total_income = 0
+            total_expense = 0
         
         balance = total_income - total_expense
         
