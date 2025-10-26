@@ -10,7 +10,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton
+  IconButton,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Send as SendIcon,
@@ -41,6 +43,8 @@ export default function AsistentePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Cargar historial de conversación al montar el componente
   useEffect(() => {
@@ -393,10 +397,10 @@ export default function AsistentePage() {
 
       {/* Input Area - Fixed at bottom */}
       <Box sx={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        position: { xs: "fixed", sm: "absolute" },
+        bottom: { xs: '87px', sm: 0 },
+        left: { xs: 0, sm: 'auto' },
+        right: { xs: 0, sm: 0 },
         borderTop: "1px solid",
         borderColor: "grey.200",
         bgcolor: "background.paper",
