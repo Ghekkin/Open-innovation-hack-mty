@@ -22,28 +22,34 @@ from mcp.types import (
 import mcp.types as types
 
 from database import get_db_connection
-from tools import (
-    get_company_balance_tool,
-    get_personal_balance_tool,
-    get_expenses_by_category_tool,
-    get_cash_flow_projection_tool,
-    get_budget_comparison_tool,
-    simulate_scenario_tool,
+from tools.financial.balance import get_company_balance_tool, get_personal_balance_tool
+from tools.financial.expense import get_expenses_by_category_tool
+from tools.financial.projection import get_cash_flow_projection_tool, simulate_scenario_tool
+from tools.financial.budget import get_budget_comparison_tool
+from tools.financial.risk import (
     get_financial_health_score_tool,
+    assess_financial_risk_tool,
+    get_alerts_tool,
+    get_stress_test_tool,
+)
+from tools.financial.analytics import (
     get_spending_trends_tool,
     get_category_recommendations_tool,
     detect_anomalies_tool,
     compare_periods_tool,
-    assess_financial_risk_tool,
-    get_alerts_tool,
+)
+from tools.financial.predictive import (
     predict_cash_shortage_tool,
-    get_stress_test_tool,
-    list_transactions_tool,
-    top_categories_tool,
-    monthly_summary_tool,
     cash_runway_tool,
     forecast_expenses_by_category_tool,
     bill_forecaster_tool,
+)
+from tools.financial.descriptive import (
+    list_transactions_tool,
+    top_categories_tool,
+    monthly_summary_tool,
+)
+from tools.financial.planning import (
     goal_based_plan_tool,
     budget_allocator_tool,
     debt_paydown_optimizer_tool,
