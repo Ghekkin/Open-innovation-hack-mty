@@ -12,7 +12,7 @@
 
 ## Concepto de la Solución
 
-Este proyecto presenta una implementación de un **Motor de Cómputo Ponderado (MCP) Financiero**, diseñado para ofrecer a los usuarios de Banorte una herramienta inteligente de análisis y planificación financiera. La solución ingiere datos transaccionales y, a través de un asistente conversacional, permite a los usuarios obtener análisis descriptivos, realizar proyecciones, construir planes financieros y recibir recomendaciones personalizadas.
+Este proyecto presenta una implementación de un **Servidor MCP (Model Context Protocol) Financiero**, diseñado para ofrecer a los usuarios de Banorte una herramienta inteligente de análisis y planificación financiera. La solución ingiere datos transaccionales y, a través de un asistente conversacional, permite a los usuarios obtener análisis descriptivos, realizar proyecciones, construir planes financieros y recibir recomendaciones personalizadas.
 
 Nuestro enfoque es un **modelo híbrido**, que combina:
 1.  **Herramientas Predefinidas (Deterministas):** Funciones robustas y probadas para cálculos financieros precisos (ej. análisis de gastos, proyecciones de inversión).
@@ -24,14 +24,14 @@ El proyecto es un monorepo que se compone de tres subproyectos principales:
 
 | Componente            | Tecnología Principal | Descripción                                                              |
 | --------------------- | -------------------- | ------------------------------------------------------------------------ |
-| **`backend/`**        | **Python, FastAPI**  | API REST que expone el MCP, orquesta las herramientas y se comunica con la BD. |
+| **`backend/`**        | **Python, FastMCP**  | Servidor MCP que expone herramientas financieras sobre HTTP y se comunica con la BD. |
 | **`frontend/`**       | **Next.js, React**   | Aplicación web interactiva con el asistente y visualizaciones de datos.  |
 | **`documentation/`**  | **Astro**            | Sitio de documentación estática con la descripción técnica del proyecto. |
 
 ### Tecnologías Clave:
-*   **Backend:** Python, FastAPI, SQLAlchemy, Pandas, Pydantic.
+*   **Backend:** Python, FastMCP (MCP sobre HTTP), SQLAlchemy, Pandas, Pydantic.
 *   **Frontend:** TypeScript, Next.js, React, Tailwind CSS, Recharts.
-*   **Base de Datos:** MySQL (inferido por el conector).
+*   **Base de Datos:** MySQL.
 *   **Documentación:** Astro, Starlight.
 
 ## Arquitectura
@@ -39,15 +39,15 @@ El proyecto es un monorepo que se compone de tres subproyectos principales:
 El monorepo está estructurado para separar las responsabilidades de cada componente:
 
 *   `backend/`: Contiene toda la lógica del servidor.
-    *   `main.py`: Punto de entrada de la API FastAPI.
-    *   `src/mcp_server.py`: Núcleo del Motor de Cómputo Ponderado.
+    *   `main.py`: Punto de entrada del servidor MCP sobre HTTP.
+    *   `src/mcp_server.py`: Núcleo del servidor MCP con las definiciones de herramientas.
     *   `src/tools/`: Conjunto de herramientas financieras que el MCP puede invocar.
     *   `src/database/`: Lógica de conexión y consulta a la base de datos.
 
 *   `frontend/`: Contiene la aplicación cliente.
     *   `app/dashboard/asistente/`: Componentes principales de la interfaz de chat.
-    *   `app/api/`: Rutas de API de Next.js que actúan como proxy hacia el backend de FastAPI.
-    *   `lib/mcp-client.ts`: Cliente para comunicarse con el MCP.
+    *   `app/api/`: Rutas de API de Next.js que actúan como proxy hacia el servidor MCP.
+    *   `lib/mcp-client.ts`: Cliente para comunicarse con el servidor MCP.
 
 *   `documentation/`: Contiene el sitio de documentación técnica.
     *   `src/content/docs/`: Archivos Markdown que generan las páginas de documentación.
@@ -64,7 +64,7 @@ Siga estos pasos para levantar el entorno de desarrollo completo.
 
 ### 1. Backend (`backend/`)
 
-El backend es el cerebro del sistema, ejecutando el MCP y exponiendo los endpoints.
+El backend es el cerebro del sistema, ejecutando el servidor MCP sobre HTTP y exponiendo las herramientas financieras.
 
 1.  **Navegar al directorio:**
     ```bash
@@ -94,9 +94,9 @@ El backend es el cerebro del sistema, ejecutando el MCP y exponiendo los endpoin
 
 5.  **Ejecutar el servidor:**
     ```bash
-    uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    python main.py
     ```
-    El servidor estará disponible en `http://localhost:8000`.
+    El servidor MCP estará disponible en `http://localhost:8080`.
 
 ### 2. Frontend (`frontend/`)
 
@@ -113,9 +113,9 @@ La interfaz de usuario desde donde se interactúa con el asistente.
     ```
 
 3.  **Configurar variables de entorno:**
-    Cree un archivo `.env.local` en el directorio `frontend/`. Este archivo debe contener la URL del backend.
+    Cree un archivo `.env.local` en el directorio `frontend/`. Este archivo debe contener la URL del servidor MCP.
     ```env
-    NEXT_PUBLIC_MCP_API_URL=http://localhost:8000
+    NEXT_PUBLIC_MCP_API_URL=http://localhost:8080
     ```
 
 4.  **Ejecutar la aplicación:**
