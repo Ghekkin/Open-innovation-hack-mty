@@ -40,6 +40,7 @@ interface Message {
   sender: "user" | "assistant";
   timestamp: Date;
   rawJson?: any;
+  isTyping?: boolean; // Para el efecto de typing
 }
 
 const ELEVENLABS_API_KEY = "5ab2b24e65cff23cc1ef0da942133d90";
@@ -56,6 +57,7 @@ export default function AsistentePage() {
   const [isPlayingAudio, setIsPlayingAudio] = useState<string | null>(null);
   const [isInCall, setIsInCall] = useState(false); // Nuevo: modo conversación
   const [isListening, setIsListening] = useState(false); // Nuevo: escuchando en llamada
+  const [typingMessageId, setTypingMessageId] = useState<string | null>(null); // ID del mensaje que está "escribiendo"
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -63,6 +65,7 @@ export default function AsistentePage() {
   const recognitionRef = useRef<any>(null);
   const conversationRecognitionRef = useRef<any>(null); // Para el modo llamada
   const isInCallRef = useRef<boolean>(false); // Ref para el estado de llamada (siempre actualizado)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -114,6 +117,56 @@ export default function AsistentePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Función para simular efecto de typing
+  const simulateTyping = (fullText: string, messageId: string) => {
+    return new Promise<void>((resolve) => {
+      const words = fullText.split(' ');
+      let currentIndex = 0;
+      const typingSpeed = 50; // ms por palabra (ajustable para más rápido/lento)
+
+      setTypingMessageId(messageId);
+
+      const typeNextWord = () => {
+        if (currentIndex < words.length) {
+          const partialText = words.slice(0, currentIndex + 1).join(' ');
+          
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === messageId 
+                ? { ...msg, content: partialText, isTyping: true }
+                : msg
+            )
+          );
+          
+          currentIndex++;
+          typingTimeoutRef.current = setTimeout(typeNextWord, typingSpeed);
+        } else {
+          // Terminar el efecto de typing
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === messageId 
+                ? { ...msg, content: fullText, isTyping: false }
+                : msg
+            )
+          );
+          setTypingMessageId(null);
+          resolve();
+        }
+      };
+
+      typeNextWord();
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
@@ -156,15 +209,25 @@ export default function AsistentePage() {
 
       const data = await response.json();
 
+      const messageId = (Date.now() + 1).toString();
+      const fullResponse = data.response || 'No se pudo generar una respuesta';
+
+      // Crear mensaje vacío inicialmente
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.response || 'No se pudo generar una respuesta',
+        id: messageId,
+        content: '',
         sender: "assistant",
         timestamp: new Date(),
-        rawJson: data.rawJson
+        rawJson: data.rawJson,
+        isTyping: true
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
+
+      // Simular efecto de typing
+      await simulateTyping(fullResponse, messageId);
+
     } catch (error) {
       console.error('Error:', error);
       const errorMessage: Message = {
@@ -174,7 +237,6 @@ export default function AsistentePage() {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -217,19 +279,27 @@ export default function AsistentePage() {
 
       const data = await response.json();
 
+      const messageId = (Date.now() + 1).toString();
+      const fullResponse = data.response || 'No se pudo generar una respuesta';
+
+      // Crear mensaje vacío inicialmente
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.response || 'No se pudo generar una respuesta',
+        id: messageId,
+        content: '',
         sender: "assistant",
         timestamp: new Date(),
-        rawJson: data.rawJson
+        rawJson: data.rawJson,
+        isTyping: true
       };
 
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
       
+      // Simular efecto de typing
+      await simulateTyping(fullResponse, messageId);
+      
       // Reproducir la respuesta automáticamente con audio
-      playMessageAudioDirect(assistantMessage.content)
+      playMessageAudioDirect(fullResponse)
         .then(() => {
           setTimeout(() => {
             if (isInCallRef.current) {
@@ -712,6 +782,24 @@ export default function AsistentePage() {
                             .replace(/\n/g, '<br>')
                         }}
                       />
+                      {/* Cursor parpadeante cuando está escribiendo */}
+                      {message.isTyping && message.sender === "assistant" && (
+                        <Box
+                          component="span"
+                          sx={{
+                            display: "inline-block",
+                            width: "8px",
+                            height: "16px",
+                            bgcolor: "white",
+                            ml: 0.5,
+                            animation: "blink 1s infinite",
+                            "@keyframes blink": {
+                              "0%, 49%": { opacity: 1 },
+                              "50%, 100%": { opacity: 0 }
+                            }
+                          }}
+                        />
+                      )}
                     </Paper>
                     
                     {/* Botón de reproducir audio para mensajes del asistente */}
