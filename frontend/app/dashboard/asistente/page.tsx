@@ -46,6 +46,13 @@ export default function AsistentePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
+
   // Cargar historial de conversación al montar el componente
   useEffect(() => {
     const user = getCurrentUser();
@@ -397,10 +404,10 @@ export default function AsistentePage() {
 
       {/* Input Area - Fixed at bottom */}
       <Box sx={{
-        position: { xs: "fixed", sm: "absolute" },
+        position: "fixed",
         bottom: { xs: '87px', sm: 0 },
-        left: { xs: 0, sm: 'auto' },
-        right: { xs: 0, sm: 0 },
+        left: { xs: 0, sm: 'var(--drawer-width)' },
+        width: { xs: '100%', sm: 'calc(100% - var(--drawer-width))' },
         borderTop: "1px solid",
         borderColor: "grey.200",
         bgcolor: "background.paper",
