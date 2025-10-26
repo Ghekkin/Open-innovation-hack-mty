@@ -5,7 +5,7 @@
 
 ## Enlaces
 
-*   **Video Demo:** [LINK_VIDEO_DEMO]
+*   **Video Demo:** https://youtu.be/wlcTZtYhKEs
 *   **Documentación Técnica:** https://docs.banortemaya.tech
 *   **Diagrama de Arquitectura:** ![diagrama](./img/diagrama.jpg)
 
