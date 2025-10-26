@@ -529,12 +529,15 @@ export default function DashboardPage() {
                     outerRadius={90}
                     paddingAngle={2}
                     dataKey="total"
+                    nameKey="categoria"
                   >
                     {expensesByCategory.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getCategoryColor(index)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [`${formatCurrency(value)}`, name]} 
+                  />
                   <Legend
                     verticalAlign="bottom"
                     height={32}
