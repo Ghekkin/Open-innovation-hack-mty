@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // URL del backend MCP (ajusta según tu configuración)
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.MCP_SERVER_URL;
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('user_id') || null;
-    const companyId = searchParams.get('company_id') || 'EMPRESA001'; // Empresa por defecto
+    const companyId = searchParams.get('company_id'); // Empresa por defecto
 
     // Llamar a los endpoints del backend MCP
     const [balanceResponse, expensesResponse] = await Promise.all([

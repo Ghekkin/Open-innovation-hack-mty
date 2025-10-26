@@ -25,7 +25,10 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Assessment as AssessmentIcon,
   Send as SendIcon,
-  AutoAwesome as AutoAwesomeIcon
+  AutoAwesome as AutoAwesomeIcon,
+  Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
 } from "@mui/icons-material";
 import { getCurrentUser, formatUsername } from "@/lib/auth";
 
@@ -53,6 +56,7 @@ export default function DashboardPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResponse, setAiResponse] = useState<string>("");
   const [showAiResponse, setShowAiResponse] = useState(false);
+  const [isResponseExpanded, setIsResponseExpanded] = useState(true);
 
   useEffect(() => {
     // Obtener información del usuario del localStorage
@@ -169,6 +173,7 @@ export default function DashboardPage() {
       const data = await response.json();
       setAiResponse(data.response || 'No se pudo generar un análisis');
       setShowAiResponse(true);
+      setIsResponseExpanded(true);
       setInputValue("");
     } catch (error) {
       console.error('Error:', error);
@@ -297,6 +302,36 @@ export default function DashboardPage() {
         <Alert 
           severity="info"
           icon={<AutoAwesomeIcon />}
+          action={
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <IconButton
+                aria-label="contraer"
+                color="inherit"
+                size="small"
+                onClick={() => setIsResponseExpanded(!isResponseExpanded)}
+                sx={{
+                  mt: -0.5
+                }}
+              >
+                {isResponseExpanded ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
+              </IconButton>
+              <IconButton
+                aria-label="cerrar"
+                color="inherit"
+                size="small"
+                onClick={() => setShowAiResponse(false)}
+                sx={{
+                  mt: -0.5
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          }
           sx={{
             mb: { xs: 2, sm: 3 },
             borderRadius: 2,
@@ -309,22 +344,24 @@ export default function DashboardPage() {
             variant="subtitle2" 
             sx={{ 
               fontWeight: "bold", 
-              mb: 1,
+              mb: isResponseExpanded ? 1 : 0,
               fontSize: { xs: "0.9rem", sm: "1rem" }
             }}
           >
             Análisis Financiero
           </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              whiteSpace: "pre-wrap",
-              lineHeight: 1.6,
-              fontSize: { xs: "0.8rem", sm: "0.875rem" }
-            }}
-          >
-            {aiResponse}
-          </Typography>
+          {isResponseExpanded && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.6,
+                fontSize: { xs: "0.8rem", sm: "0.875rem" }
+              }}
+            >
+              {aiResponse}
+            </Typography>
+          )}
         </Alert>
       )}
 
@@ -374,7 +411,8 @@ export default function DashboardPage() {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "repeat(3, 1fr)"
+                sm: "1fr",
+                lg: "repeat(3, 1fr)"
               },
               gap: { xs: 1.5, sm: 2 },
               mb: { xs: 3, lg: 0 }
