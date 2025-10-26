@@ -140,6 +140,9 @@ def generate_financial_plan_tool(
         total_monthly_expense = historical_data['avg_monthly_expense'] + additional_monthly_expense
         monthly_net = total_monthly_income - total_monthly_expense
         
+        logger.info(f"Cálculos finales: income={total_monthly_income}, expense={total_monthly_expense}, net={monthly_net}")
+        logger.info(f"Historical data: {historical_data}")
+        
         # 4. Analizar la meta del usuario
         goal_analysis = _analyze_goal(plan_goal)
         
@@ -192,7 +195,7 @@ def generate_financial_plan_tool(
         # 10. Generar alertas y advertencias
         alerts = _generate_alerts(metrics, monthly_net, projections)
         
-        return {
+        result = {
             "success": True,
             "plan_id": f"FP-{entity_type[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "generated_at": datetime.now().isoformat(),
@@ -217,6 +220,10 @@ def generate_financial_plan_tool(
             "alerts": alerts,
             "planning_horizon_months": planning_horizon_months
         }
+        
+        logger.info(f"Plan generado exitosamente. Current situation: {result['current_situation']}")
+        logger.info(f"Metrics: {result['metrics']}")
+        return result
         
     except Exception as e:
         logger.error(f"Error en generate_financial_plan_tool: {e}")
