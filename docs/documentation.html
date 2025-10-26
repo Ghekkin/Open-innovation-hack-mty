@@ -637,72 +637,506 @@ python -m venv venv
 pip install -r requirements.txt</pre>
 
       <div class="note">
-        <strong>Requisitos previos:</strong>
+        <strong>Requisitos del Sistema:</strong>
         <ul>
           <li>Python 3.11 o superior instalado</li>
           <li>MySQL 8.0+ instalado y configurado</li>
+          <li>Mínimo 4GB RAM para procesamiento de datos</li>
           <li>Acceso a las credenciales de la base de datos</li>
+          <li>Puerto 8000 disponible para el servidor HTTP</li>
         </ul>
       </div>
 
-      <h3>Estructura del Backend</h3>
-      <p>El backend está diseñado siguiendo principios de arquitectura limpia y modularidad:</p>
+      <h3>Arquitectura del Sistema</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>Implementación</th>
+            <th>Función</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Servidor MCP</td>
+            <td><code>mcp_server.py</code></td>
+            <td>Gestión de conexiones y protocolo JSON-RPC</td>
+          </tr>
+          <tr>
+            <td>Capa de Base de Datos</td>
+            <td><code>database/connection.py</code></td>
+            <td>Pool de conexiones y transacciones</td>
+          </tr>
+          <tr>
+            <td>Motor Financiero</td>
+            <td><code>tools/financial/</code></td>
+            <td>Análisis y procesamiento financiero</td>
+          </tr>
+          <tr>
+            <td>Sistema de Logging</td>
+            <td><code>utils/logger.py</code></td>
+            <td>Registro estructurado de operaciones</td>
+          </tr>
+        </tbody>
+      </table>
 
+      <h3>Módulos Principales</h3>
+
+      <h4>Herramientas Financieras</h4>
       <ul>
         <li>
-          <code>src/mcp_server.py</code>
-          <p>Punto de entrada principal que maneja todas las peticiones JSON-RPC, autenticación y balanceo de carga.</p>
+          <strong>Analytics (<code>tools/financial/analytics.py</code>)</strong>
+          <p>Implementa análisis estadísticos avanzados usando NumPy y Pandas para procesamiento de series temporales financieras, incluyendo cálculos de tendencias, estacionalidad y anomalías.</p>
         </li>
         <li>
-          <code>src/database/</code>
-          <p>Encapsula toda la lógica de interacción con la base de datos usando patrones Repository y Unit of Work.</p>
+          <strong>Proyecciones (<code>tools/financial/projection.py</code>)</strong>
+          <p>Motor de proyección financiera que utiliza modelos ARIMA y Prophet para generar pronósticos precisos basados en históricos de transacciones.</p>
         </li>
         <li>
-          <code>src/tools/</code>
-          <p>Contiene la lógica de negocio principal: análisis financiero, proyecciones y evaluación de riesgos.</p>
+          <strong>Riesgo (<code>tools/financial/risk.py</code>)</strong>
+          <p>Evaluación de riesgos mediante análisis Monte Carlo y cálculo de VaR (Value at Risk) para diferentes escenarios financieros.</p>
         </li>
         <li>
-          <code>src/utils/</code>
-          <p>Utilidades compartidas: logging, validación, métricas y funciones auxiliares.</p>
+          <strong>Presupuestos (<code>tools/financial/budget.py</code>)</strong>
+          <p>Sistema de gestión presupuestaria con seguimiento en tiempo real y alertas de desviación.</p>
         </li>
       </ul>
 
-      <h3>Herramientas MCP Disponibles</h3>
-      <p>El servidor expone varias herramientas financieras a través del protocolo MCP:</p>
+      <h4>Capa de Datos</h4>
       <ul>
-        <li><strong>balance_tools</strong> — Cálculo de balances y estados financieros</li>
-        <li><strong>projection_tools</strong> — Proyecciones y análisis predictivo</li>
-        <li><strong>risk_tools</strong> — Evaluación de riesgos financieros</li>
-        <li><strong>budget_tools</strong> — Comparativa y seguimiento de presupuestos</li>
+        <li>
+          <strong>Conexión (<code>database/connection.py</code>)</strong>
+          <p>Pool de conexiones MySQL optimizado con reconexión automática y manejo de deadlocks.</p>
+        </li>
+        <li>
+          <strong>Queries (<code>database/queries.py</code>)</strong>
+          <p>Consultas SQL optimizadas con índices y joins eficientes para análisis financiero.</p>
+        </li>
       </ul>
+
+      <h4>Utilidades del Sistema</h4>
+      <ul>
+        <li>
+          <strong>Logger (<code>utils/logger.py</code>)</strong>
+          <p>Sistema de logging estructurado con rotación de archivos y niveles configurables.</p>
+        </li>
+        <li>
+          <strong>Validadores (<code>utils/validators.py</code>)</strong>
+          <p>Validación de datos financieros y sanitización de entradas del usuario.</p>
+        </li>
+      </ul>
+
+      <h3>Endpoints y Herramientas MCP</h3>
+      <pre>
+# Herramientas de Análisis Financiero
+mcp.tools.financial.analyze_cashflow(start_date, end_date)
+mcp.tools.financial.calculate_roi(investment_data)
+mcp.tools.financial.predict_expenses(historical_data)
+
+# Herramientas de Proyección
+mcp.tools.financial.project_revenue(months=12)
+mcp.tools.financial.forecast_cashflow(scenario_params)
+
+# Herramientas de Riesgo
+mcp.tools.financial.calculate_var(portfolio, confidence=0.95)
+mcp.tools.financial.stress_test(scenarios)
+
+# Herramientas de Presupuesto
+mcp.tools.financial.track_budget(budget_id)
+mcp.tools.financial.compare_actual_vs_budget(period)</pre>
+
+      <div class="note">
+        <strong>Características de Alta Disponibilidad:</strong>
+        <ul>
+          <li>Reconexión automática a la base de datos</li>
+          <li>Caché de resultados frecuentes</li>
+          <li>Rate limiting por cliente</li>
+          <li>Circuit breaker para servicios externos</li>
+        </ul>
+      </div>
+
+      <h3>Análisis Técnico del Sistema</h3>
+
+      <h4>Servidor MCP Base</h4>
+      <p>El núcleo del servidor (<code>src/mcp_server.py</code>) implementa:
+      <ul>
+        <li>Servidor ASGI con Uvicorn para alto rendimiento</li>
+        <li>Manejo concurrente de conexiones (hasta 1000 simultáneas)</li>
+        <li>Sistema de routing basado en JSON-RPC</li>
+        <li>API: <code>POST /mcp/execute</code> - Endpoint principal JSON-RPC</li>
+        <li>API: <code>GET /mcp/health</code> - Verificación de estado del servidor</li>
+        <li>API: <code>GET /mcp/metrics</code> - Métricas de rendimiento</li>
+      </ul>
+      </p>
+
+      <h4>Motor de Análisis Financiero</h4>
+      <p>Sistema de análisis (<code>tools/financial/analytics.py</code>) que proporciona:
+      <ul>
+        <li>Procesamiento de series temporales con NumPy/Pandas</li>
+        <li>Detección de patrones y anomalías</li>
+        <li>Análisis estadístico avanzado</li>
+        <li>API MCP: <code>analyze_transactions(start_date, end_date)</code></li>
+        <li>API MCP: <code>detect_patterns(data_series)</code></li>
+        <li>API MCP: <code>calculate_metrics(dataset)</code></li>
+      </ul>
+      </p>
+
+      <h4>Sistema de Proyecciones</h4>
+      <p>Motor predictivo (<code>tools/financial/projection.py</code>) que incluye:
+      <ul>
+        <li>Modelos ARIMA para series temporales</li>
+        <li>Integración con Facebook Prophet</li>
+        <li>Procesamiento paralelo para cálculos intensivos</li>
+        <li>API MCP: <code>forecast_revenue(months=12)</code></li>
+        <li>API MCP: <code>project_expenses(categories, timeframe)</code></li>
+        <li>API MCP: <code>simulate_scenarios(parameters)</code></li>
+      </ul>
+      </p>
+
+      <h4>Análisis de Riesgos</h4>
+      <p>Sistema de riesgos (<code>tools/financial/risk.py</code>) que implementa:
+      <ul>
+        <li>Simulaciones Monte Carlo paralelizadas</li>
+        <li>Cálculo de Value at Risk (VaR)</li>
+        <li>Evaluación de escenarios de estrés</li>
+        <li>API MCP: <code>calculate_var(portfolio, confidence)</code></li>
+        <li>API MCP: <code>run_stress_test(scenarios)</code></li>
+        <li>API MCP: <code>assess_risk_factors(investments)</code></li>
+      </ul>
+      </p>
+
+      <h4>Gestión Presupuestaria</h4>
+      <p>Sistema de presupuestos (<code>tools/financial/budget.py</code>) que ofrece:
+      <ul>
+        <li>Seguimiento en tiempo real de gastos</li>
+        <li>Comparativas presupuesto vs. realidad</li>
+        <li>Alertas de desviación automáticas</li>
+        <li>API MCP: <code>track_budget_execution(budget_id)</code></li>
+        <li>API MCP: <code>analyze_variances(period)</code></li>
+        <li>API MCP: <code>generate_budget_alerts(thresholds)</code></li>
+      </ul>
+      </p>
+
+      <h4>Capa de Base de Datos</h4>
+      <p>Gestión de datos (<code>database/connection.py</code>, <code>database/queries.py</code>) que incluye:
+      <ul>
+        <li>Pool de conexiones MySQL (máx. 20 conexiones)</li>
+        <li>Transacciones ACID con retry automático</li>
+        <li>Queries optimizadas con índices</li>
+        <li>API Interna: <code>execute_transaction(query, params)</code></li>
+        <li>API Interna: <code>batch_insert(table, records)</code></li>
+        <li>API Interna: <code>query_with_cache(query, ttl)</code></li>
+      </ul>
+      </p>
+
+      <h4>Sistema de Caché</h4>
+      <p>Caché distribuido con Redis que implementa:
+      <ul>
+        <li>TTL de 5 minutos para datos no críticos</li>
+        <li>Actualización inmediata para datos sensibles</li>
+        <li>Invalidación por patrones</li>
+        <li>API Interna: <code>cache_get(key, default)</code></li>
+        <li>API Interna: <code>cache_set(key, value, ttl)</code></li>
+        <li>API Interna: <code>cache_invalidate_pattern(pattern)</code></li>
+      </ul>
+      </p>
+
+      <h4>Procesamiento de Texto Financiero</h4>
+      <p>Sistema de formateo (<code>tools/text/formatting.py</code>, <code>tools/text/narrative.py</code>) que provee:
+      <ul>
+        <li>Generación de reportes narrativos</li>
+        <li>Formateo de datos financieros</li>
+        <li>Traducción de métricas a texto</li>
+        <li>API MCP: <code>generate_report(data, template)</code></li>
+        <li>API MCP: <code>format_financial_metrics(metrics)</code></li>
+        <li>API MCP: <code>create_narrative_summary(analysis)</code></li>
+      </ul>
+      </p>
+
+      <h4>Sistema de Monitoreo</h4>
+      <p>Instrumentación del sistema que incluye:
+      <ul>
+        <li>Métricas Prometheus para rendimiento</li>
+        <li>Trazas OpenTelemetry para debugging</li>
+        <li>Logs estructurados con rotación</li>
+        <li>API: <code>GET /metrics</code> - Métricas Prometheus</li>
+        <li>API: <code>GET /health/detailed</code> - Estado detallado</li>
+        <li>API: <code>POST /trace/export</code> - Exportación de trazas</li>
+      </ul>
+      </p>
+
+      <h4>Orquestación de Servicios</h4>
+      <p>Orquestador (<code>tools/financial/orchestrator.py</code>) que maneja:
+      <ul>
+        <li>Enrutamiento dinámico de solicitudes</li>
+        <li>Balanceo de carga de procesos</li>
+        <li>Gestión de dependencias entre servicios</li>
+        <li>API Interna: <code>route_request(request_type, params)</code></li>
+        <li>API Interna: <code>coordinate_services(service_list)</code></li>
+        <li>API Interna: <code>handle_service_failure(service_id)</code></li>
+      </ul>
+      </p>
     </section>
 
     <section id="frontend">
       <h2>Frontend (Next.js)</h2>
       
       <h3>Instalación y Configuración</h3>
-      <p>El frontend está construido con Next.js 16, React 19 y Tailwind CSS:</p>
+      <p>El frontend está construido con Next.js 16, React 19 y Tailwind CSS. Para comenzar:</p>
       <pre>cd frontend
 npm install
 npm run dev</pre>
 
+      <div class="note">
+        <strong>Requisitos del Sistema:</strong>
+        <ul>
+          <li>Node.js 18.0 o superior</li>
+          <li>NPM 8.0 o superior</li>
+          <li>Al menos 2GB de RAM para desarrollo</li>
+        </ul>
+      </div>
+
+      <h3>Stack Tecnológico</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Tecnología</th>
+            <th>Versión</th>
+            <th>Propósito</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Next.js</td>
+            <td>16.0.0</td>
+            <td>Framework React con SSR y optimizaciones</td>
+          </tr>
+          <tr>
+            <td>React</td>
+            <td>19.2.0</td>
+            <td>Biblioteca UI principal</td>
+          </tr>
+          <tr>
+            <td>Material UI</td>
+            <td>7.3.4</td>
+            <td>Sistema de componentes y diseño</td>
+          </tr>
+          <tr>
+            <td>Recharts</td>
+            <td>3.3.0</td>
+            <td>Visualización de datos financieros</td>
+          </tr>
+          <tr>
+            <td>Tailwind CSS</td>
+            <td>4.0</td>
+            <td>Utilidades CSS y diseño responsivo</td>
+          </tr>
+          <tr>
+            <td>TypeScript</td>
+            <td>5.0</td>
+            <td>Tipado estático y seguridad</td>
+          </tr>
+        </tbody>
+      </table>
+
       <h3>Arquitectura Frontend</h3>
-      <p>La aplicación está estructurada siguiendo las mejores prácticas de Next.js:</p>
+      <p>La aplicación implementa una arquitectura moderna basada en el App Router de Next.js 16:</p>
+
+      <h4>Estructura de Directorios</h4>
       <ul>
-        <li><code>app/</code> — Componentes y páginas principales usando App Router</li>
-        <li><code>app/api/</code> — Endpoints de API y comunicación con el backend</li>
-        <li><code>app/dashboard/</code> — Vistas principales del dashboard financiero</li>
-        <li><code>app/components/</code> — Componentes reutilizables de UI</li>
+        <li>
+          <code>app/</code>
+          <p>Directorio principal usando el nuevo App Router de Next.js</p>
+          <ul>
+            <li><code>layout.tsx</code> — Layout principal con navegación y contextos</li>
+            <li><code>page.tsx</code> — Página de inicio</li>
+          </ul>
+        </li>
+        <li>
+          <code>app/api/</code>
+          <p>APIs del frontend y comunicación con backend</p>
+          <ul>
+            <li><code>financial_data/</code> — Endpoints para datos financieros</li>
+            <li><code>chat/</code> — Endpoints para el asistente virtual</li>
+            <li><code>mcp/</code> — Integración con servidor MCP</li>
+          </ul>
+        </li>
+        <li>
+          <code>app/dashboard/</code>
+          <p>Vistas principales del dashboard financiero</p>
+          <ul>
+            <li><code>asistente/</code> — Interfaz del asistente virtual</li>
+            <li><code>plan-financiero/</code> — Herramientas de planificación</li>
+          </ul>
+        </li>
+        <li>
+          <code>lib/</code>
+          <p>Utilidades y lógica de negocio compartida</p>
+          <ul>
+            <li><code>auth.ts</code> — Manejo de autenticación</li>
+            <li><code>chat-storage.ts</code> — Persistencia de conversaciones</li>
+            <li><code>mcp-client.ts</code> — Cliente MCP para backend</li>
+          </ul>
+        </li>
       </ul>
 
       <h3>Características Principales</h3>
-      <p>El frontend implementa varias características clave:</p>
+      
+      <h4>Dashboard Interactivo</h4>
       <ul>
-        <li>Dashboard interactivo con gráficos en tiempo real</li>
-        <li>Formularios inteligentes para simulación de escenarios</li>
-        <li>Interfaz adaptativa para dispositivos móviles</li>
-        <li>Caching y optimización de rendimiento</li>
+        <li><strong>Gráficos en Tiempo Real</strong> 
+          <p>Implementados con Recharts para visualización de datos financieros actualizados</p>
+        </li>
+        <li><strong>Componentes Material UI</strong>
+          <p>Interfaz moderna y accesible usando MUI v7</p>
+        </li>
+        <li><strong>Estado Global</strong>
+          <p>Manejo eficiente de estado con React Context y hooks personalizados</p>
+        </li>
       </ul>
+
+      <h4>Asistente Virtual</h4>
+      <ul>
+        <li><strong>Chat Interactivo</strong>
+          <p>Interface conversacional con historial persistente</p>
+        </li>
+        <li><strong>Integración IA</strong>
+          <p>Uso de @google/genai para procesamiento de lenguaje natural</p>
+        </li>
+        <li><strong>Respuestas Contextuales</strong>
+          <p>Análisis financiero personalizado en tiempo real</p>
+        </li>
+      </ul>
+
+      <h4>Optimizaciones</h4>
+      <ul>
+        <li><strong>Server-Side Rendering</strong>
+          <p>Páginas pre-renderizadas para mejor SEO y rendimiento</p>
+        </li>
+        <li><strong>Caching Inteligente</strong>
+          <p>Estrategias de caché para datos financieros y respuestas del asistente</p>
+        </li>
+        <li><strong>Lazy Loading</strong>
+          <p>Carga bajo demanda de componentes pesados y visualizaciones</p>
+        </li>
+      </ul>
+
+      <h4>Diseño Responsivo</h4>
+      <ul>
+        <li><strong>Mobile First</strong>
+          <p>Diseño adaptativo priorizado para dispositivos móviles</p>
+        </li>
+        <li><strong>Tailwind CSS</strong>
+          <p>Utilidades CSS para diseño fluido y consistente</p>
+        </li>
+        <li><strong>Componentes Adaptables</strong>
+          <p>UI que se ajusta a diferentes tamaños de pantalla</p>
+        </li>
+      </ul>
+
+      <div class="note">
+        <strong>Mejores Prácticas:</strong>
+        <ul>
+          <li>TypeScript para type safety en toda la aplicación</li>
+          <li>ESLint para calidad de código consistente</li>
+          <li>Prettier para formateo automático</li>
+          <li>Testing con React Testing Library</li>
+        </ul>
+      </div>
+
+      <h3>Análisis Técnico del Sistema</h3>
+      
+      <h4>Sistema de Autenticación y Seguridad</h4>
+      <p>La autenticación se gestiona a través de <code>lib/auth.ts</code>, implementando:
+      <ul>
+        <li>JSON Web Tokens (JWT) con rotación automática cada 1 hora</li>
+        <li>Cookies HttpOnly para almacenamiento seguro de tokens</li>
+        <li>API: <code>POST /api/auth/login</code> - Maneja inicio de sesión</li>
+        <li>API: <code>POST /api/auth/refresh</code> - Renueva tokens expirados</li>
+        <li>API: <code>POST /api/auth/logout</code> - Invalida sesiones activas</li>
+      </ul>
+      </p>
+
+      <h4>Dashboard Financiero Principal</h4>
+      <p>El dashboard (<code>app/dashboard/page.tsx</code>) implementa:
+      <ul>
+        <li>Server-Side Rendering (SSR) para la carga inicial de datos</li>
+        <li>Client-Side Rendering para actualizaciones en tiempo real</li>
+        <li>React Query para gestión de estado y caché</li>
+        <li>API: <code>GET /api/financial_data/summary</code> - Resumen financiero general</li>
+        <li>API: <code>GET /api/financial_data/transactions</code> - Lista de transacciones</li>
+        <li>API: <code>GET /api/financial_data/metrics</code> - Métricas financieras clave</li>
+      </ul>
+      </p>
+
+      <h4>Visualizaciones y Gráficos</h4>
+      <p>Sistema de visualización utilizando Recharts en <code>app/dashboard/components/</code>:
+      <ul>
+        <li>Gráficos de tendencias con actualización automática</li>
+        <li>Componentes interactivos para análisis detallado</li>
+        <li>Sistema de caché de datos para rendimiento optimizado</li>
+        <li>API: <code>GET /api/financial_data/charts/trends</code> - Datos de tendencias</li>
+        <li>API: <code>GET /api/financial_data/charts/comparison</code> - Datos comparativos</li>
+      </ul>
+      </p>
+
+      <h4>Asistente Virtual IA</h4>
+      <p>El asistente virtual (<code>app/dashboard/asistente/page.tsx</code>) integra:
+      <ul>
+        <li>API de Google AI mediante <code>@google/genai</code></li>
+        <li>Procesamiento de lenguaje natural para consultas financieras</li>
+        <li>Sistema de memoria de conversación con persistencia</li>
+        <li>API: <code>POST /api/chat/query</code> - Procesa consultas del usuario</li>
+        <li>API: <code>GET /api/chat/history</code> - Recupera historial de conversación</li>
+        <li>API: <code>POST /api/financial_data/analyze</code> - Análisis contextual de datos</li>
+      </ul>
+      </p>
+
+      <h4>Planificación Financiera</h4>
+      <p>El módulo de planificación (<code>app/dashboard/plan-financiero/</code>) proporciona:
+      <ul>
+        <li>Motor de simulación financiera en tiempo real</li>
+        <li>Análisis predictivo de escenarios</li>
+        <li>Visualización de proyecciones</li>
+        <li>API: <code>POST /api/financial-plan/simulate</code> - Ejecuta simulaciones</li>
+        <li>API: <code>POST /api/financial-plan/optimize</code> - Optimiza planes financieros</li>
+        <li>API: <code>GET /api/financial-plan/recommendations</code> - Sugiere mejoras</li>
+      </ul>
+      </p>
+
+      <h4>Gestión de Estado Global</h4>
+      <p>El estado de la aplicación se gestiona mediante:
+      <ul>
+        <li>Contexto global financiero para sincronización de datos</li>
+        <li>Sistema de caché con invalidación inteligente</li>
+        <li>Revalidación automática en cambios del backend</li>
+        <li>API: <code>GET /api/financial_data/sync</code> - Sincronización de estado</li>
+        <li>API: <code>GET /api/financial_data/updates</code> - Actualizaciones en tiempo real</li>
+      </ul>
+      </p>
+
+      <h4>Sistema de Notificaciones</h4>
+      <p>Las notificaciones se manejan a través de:
+      <ul>
+        <li>WebSocket para alertas en tiempo real</li>
+        <li>Sistema de priorización de mensajes</li>
+        <li>Persistencia de notificaciones importantes</li>
+        <li>API: <code>WS /api/notifications/connect</code> - Conexión WebSocket</li>
+        <li>API: <code>GET /api/notifications/pending</code> - Notificaciones pendientes</li>
+        <li>API: <code>POST /api/notifications/mark-read</code> - Marcar como leídas</li>
+      </ul>
+      </p>
+
+      <h4>Integración MCP</h4>
+      <p>La comunicación con el backend MCP se realiza mediante:
+      <ul>
+        <li>Cliente MCP personalizado en <code>lib/mcp-client.ts</code></li>
+        <li>Sistema de retry automático para fallos de red</li>
+        <li>Manejo de errores y timeout configurable</li>
+        <li>API: <code>POST /api/mcp/execute</code> - Ejecuta comandos MCP</li>
+        <li>API: <code>GET /api/mcp/status</code> - Estado del servidor MCP</li>
+      </ul>
+      </p>
     </section>
 
     <section id="integracion">

@@ -297,74 +297,6 @@ export default function DashboardPage() {
         </form>
         </Paper>
 
-      {/* Respuesta de IA */}
-      {showAiResponse && (
-        <Alert 
-          severity="info"
-          icon={<AutoAwesomeIcon />}
-          action={
-            <Box sx={{ display: "flex", gap: 0.5 }}>
-              <IconButton
-                aria-label="contraer"
-                color="inherit"
-                size="small"
-                onClick={() => setIsResponseExpanded(!isResponseExpanded)}
-                sx={{
-                  mt: -0.5
-                }}
-              >
-                {isResponseExpanded ? (
-                  <ExpandLessIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-              </IconButton>
-              <IconButton
-                aria-label="cerrar"
-                color="inherit"
-                size="small"
-                onClick={() => setShowAiResponse(false)}
-                sx={{
-                  mt: -0.5
-                }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          }
-          sx={{
-            mb: { xs: 2, sm: 3 },
-            borderRadius: 2,
-            "& .MuiAlert-message": {
-              width: "100%"
-            }
-          }}
-        >
-          <Typography
-            variant="subtitle2" 
-            sx={{ 
-              fontWeight: "bold", 
-              mb: isResponseExpanded ? 1 : 0,
-              fontSize: { xs: "0.9rem", sm: "1rem" }
-            }}
-          >
-            Análisis Financiero
-          </Typography>
-          {isResponseExpanded && (
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.6,
-                fontSize: { xs: "0.8rem", sm: "0.875rem" }
-              }}
-            >
-              {aiResponse}
-            </Typography>
-          )}
-        </Alert>
-      )}
-
       {/* Layout principal: Stats a la izquierda, Gráfico a la derecha */}
       <Box
         sx={{
@@ -686,6 +618,74 @@ export default function DashboardPage() {
           ))}
         </Box>
         </Paper>
+
+      {/* Respuesta de IA */}
+      {showAiResponse && (
+        <Alert 
+          severity="info"
+          icon={<AutoAwesomeIcon />}
+          action={
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <IconButton
+                aria-label="contraer"
+                color="inherit"
+                size="small"
+                onClick={() => setIsResponseExpanded(!isResponseExpanded)}
+                sx={{
+                  mt: -0.5
+                }}
+              >
+                {isResponseExpanded ? (
+                  <ExpandLessIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
+              </IconButton>
+              <IconButton
+                aria-label="cerrar"
+                color="inherit"
+                size="small"
+                onClick={() => setShowAiResponse(false)}
+                sx={{
+                  mt: -0.5
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          }
+          sx={{
+            mb: { xs: 2, sm: 3 },
+            borderRadius: 2,
+            "& .MuiAlert-message": {
+              width: "100%"
+            }
+          }}
+        >
+          <Typography
+            variant="subtitle2" 
+            sx={{ 
+              fontWeight: "bold", 
+              mb: isResponseExpanded ? 1 : 0,
+              fontSize: { xs: "0.9rem", sm: "1rem" }
+            }}
+          >
+            Análisis Financiero
+          </Typography>
+          {isResponseExpanded && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.6,
+                fontSize: { xs: "0.8rem", sm: "0.875rem" }
+              }}
+            >
+              {aiResponse}
+            </Typography>
+          )}
+        </Alert>
+      )}
 
       {/* Información adicional */}
         <Paper
