@@ -2,7 +2,7 @@ from database import get_db_connection
 from utils import setup_logger
 import logging
 import pandas as pd
-from statsmodels.tsa.api import SimpleExpSmoothing
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 logger = setup_logger('predictive_tools', logging.INFO)
 
@@ -121,64 +121,63 @@ def cash_runway_tool(
         logger.error(f"Error en cash_runway_tool: {e}")
         return {"success": False, "error": str(e)}
 
-
 def forecast_expenses_by_category_tool(
     entity_type: str = "company",
     entity_id: str = None,
     category: str = None,
-    months_ahead: int = 6,
-    method: str = "sma"
+    months_ahead: int = 6
 ) -> dict:
     """
-    Pronostica gastos futuros para una categoría específica.
+    Pronostica gastos futuros para una categoría específica usando un modelo SARIMA.
     """
     try:
+        if not category:
+            return {"success": False, "message": "Se debe especificar una categoría para el pronóstico."}
+
         db = get_db_connection()
         table = "transacciones" if entity_type == "company" else "transacciones_personales"
         id_column = "empresa_id" if entity_type == "company" else "usuario_id"
 
+        id_filter = f" AND {id_column} = %s" if entity_id else ""
         query = f"""
             SELECT DATE_TRUNC('month', fecha) as month, SUM(monto) as total
             FROM {table}
-            WHERE tipo = 'gasto' AND categoria = %s
+            WHERE tipo = 'gasto' AND categoria = %s {id_filter} AND fecha >= NOW() - INTERVAL '24 months'
+            GROUP BY month ORDER BY month
         """
+
         params = [category]
         if entity_id:
-            query += f" AND {id_column} = %s"
             params.append(entity_id)
-        
-        query += " GROUP BY month ORDER BY month"
-        
-        df_data = db.execute_query(query, tuple(params), fetch='all')
-        if len(df_data) < 3:
-            return {"success": False, "message": "Se necesitan al menos 3 meses de datos para un pronóstico."}
 
-        df = pd.DataFrame(df_data, columns=['month', 'total'])
+        data = db.execute_query(query, tuple(params), fetch='all')
+        
+        if len(data) < 12:
+            return {"success": False, "message": f"Se necesitan al menos 12 meses de datos en la categoría '{category}' para un pronóstico fiable."}
+
+        df = pd.DataFrame(data, columns=['month', 'total'])
+        df['month'] = pd.to_datetime(df['month'])
         df.set_index('month', inplace=True)
+        series = df['total'].resample('MS').sum()
+
+        # Configuración del modelo SARIMA
+        sarima_order = (1, 1, 1)
+        sarima_seasonal_order = (0, 1, 1, 12)
         
-        df = df.resample('MS').sum()
-        
-        if method == 'sma':
-            forecast_value = df['total'].rolling(window=3).mean().iloc[-1]
-            forecast_values = [forecast_value] * months_ahead
-        elif method == 'ema':
-            model = SimpleExpSmoothing(df['total'], initialization_method="estimated").fit()
-            forecast = model.forecast(months_ahead)
-            forecast_values = forecast.tolist()
-        else:
-            return {"success": False, "error": "Método de pronóstico no válido."}
+        model = SARIMAX(series, order=sarima_order, seasonal_order=sarima_seasonal_order, enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
+        forecast = model.get_forecast(steps=months_ahead).predicted_mean
+        forecast_values = forecast.tolist()
 
         return {
             "success": True,
             "category": category,
-            "method": method,
+            "methodology": "SARIMA Time Series Forecast",
             "forecast_months": months_ahead,
             "forecast": {f"month_{i+1}": round(val, 2) for i, val in enumerate(forecast_values)}
         }
     except Exception as e:
-        logger.error(f"Error en forecast_expenses_by_category_tool: {e}")
-        return {"success": False, "error": str(e)}
-
+        logger.error(f"Error en forecast_expenses_by_category_tool (SARIMA): {e}")
+        return {"success": False, "error": str(e), "message": f"No se pudo generar el pronóstico para la categoría '{category}'."}
 
 def bill_forecaster_tool(
     user_id: str = None,
@@ -225,9 +224,9 @@ def bill_forecaster_tool(
 
         for bill in potential_bills:
             next_date = pd.to_datetime(bill['last_date']) + timedelta(days=int(bill['frequency_days']))
-            for _ in range(months_ahead * 2): # Check more to ensure we get enough
+            for _ in range(months_ahead * 2):
                 if next_date > today:
-                    if len(forecasted_bills) < months_ahead * len(potential_bills): # Heuristic limit
+                    if len(forecasted_bills) < months_ahead * len(potential_bills):
                          forecasted_bills.append({
                             "description": bill['description'],
                             "amount": bill['amount'],
@@ -235,9 +234,7 @@ def bill_forecaster_tool(
                         })
                 next_date += timedelta(days=int(bill['frequency_days']))
         
-        # Deduplicate and limit
         final_forecast = sorted(list({frozenset(item.items()): item for item in forecasted_bills}.values()), key=lambda x: x['predicted_date'])
-
 
         return {
             "success": True,
