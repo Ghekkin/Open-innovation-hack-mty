@@ -18,6 +18,7 @@ import {
   Person as PersonIcon,
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
+import { getCurrentUser } from "@/lib/auth";
 
 interface Message {
   id: string;
@@ -29,16 +30,25 @@ interface Message {
 
 export default function AsistentePage() {
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "¡Hola! Soy tu asistente virtual de Banorte. Puedo ayudarte con consultas sobre clientes, saldos, productos bancarios y más. ¿En qué puedo ayudarte hoy?",
-      sender: "assistant",
-      timestamp: new Date()
-    }
-  ]);
+  const [username, setUsername] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Inicializar con mensaje de bienvenida personalizado
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setUsername(user.username);
+      const welcomeMessage: Message = {
+        id: "1",
+        content: `¡Hola ${user.username}! Soy Maya, tu asistente financiera de Banorte. Puedo ayudarte con análisis de balance, gastos, proyecciones y recomendaciones financieras ${user.type === 'empresa' ? 'para tu empresa' : 'personales'}. ¿En qué puedo ayudarte hoy?`,
+        sender: "assistant",
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, []);
 
   // Auto-scroll al final
   useEffect(() => {
@@ -61,12 +71,21 @@ export default function AsistentePage() {
     setIsLoading(true);
 
     try {
+      const user = getCurrentUser();
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage.content })
+        body: JSON.stringify({ 
+          message: userMessage.content,
+          userInfo: user ? {
+            username: user.username,
+            type: user.type,
+            userId: user.userId
+          } : null
+        })
       });
 
       const data = await response.json();
@@ -142,7 +161,7 @@ export default function AsistentePage() {
                 fontSize: { xs: "1.75rem", sm: "3rem" }
               }}
             >
-              Asistente Virtual Banorte
+              Maya - Tu Asistente Financiera
             </Typography>
             <Typography
               variant="h6"
@@ -205,15 +224,24 @@ export default function AsistentePage() {
                   >
                     <Typography
                       variant="body1"
+                      component="div"
                       sx={{
                         whiteSpace: "pre-wrap",
                         wordBreak: "break-word",
                         lineHeight: 1.6,
-                        fontSize: { xs: "0.9rem", sm: "1rem" }
+                        fontSize: { xs: "0.9rem", sm: "1rem" },
+                        '& strong': {
+                          fontWeight: 700,
+                          textDecoration: message.sender === "user" ? "none" : "underline",
+                          color: message.sender === "user" ? "primary.main" : "white"
+                        }
                       }}
-                    >
-                      {message.content}
-                    </Typography>
+                      dangerouslySetInnerHTML={{ 
+                        __html: message.content
+                          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\n/g, '<br>')
+                      }}
+                    />
                   </Paper>
 
                   {/* JSON Accordion */}

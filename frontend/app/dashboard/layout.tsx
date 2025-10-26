@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AppBar,
   Box,
@@ -17,14 +17,19 @@ import {
   useTheme,
   ThemeProvider,
   createTheme,
+  Chip,
+  Avatar,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import ChatIcon from "@mui/icons-material/Chat";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LogoutIcon from "@mui/icons-material/Logout";
+import BusinessIcon from "@mui/icons-material/Business";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { getCurrentUser, logout, formatUsername } from "@/lib/auth";
 
 const drawerWidth = 240;
 
@@ -59,9 +64,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [userType, setUserType] = useState<'empresa' | 'personal' | null>(null);
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setUsername(user.username);
+      setUserType(user.type);
+    }
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -74,8 +89,13 @@ export default function DashboardLayout({
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
   const drawer = (
-    <Box sx={{ mt: isMobile ? 2 : 0 }}>
+    <Box sx={{ mt: isMobile ? 2 : 0, height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Logo solo para desktop */}
       {!isMobile && (
         <Box sx={{ display: "flex", justifyContent: "center", p: 3, bgcolor: "primary.main" }}>
@@ -89,7 +109,48 @@ export default function DashboardLayout({
           />
         </Box>
       )}
-      <List>
+
+      {/* Información del usuario */}
+      {username && (
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: "rgba(255,255,255,0.1)", 
+          mx: 2, 
+          my: 2, 
+          borderRadius: 2,
+          border: "1px solid rgba(255,255,255,0.2)"
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Avatar sx={{ 
+              bgcolor: "white", 
+              color: "primary.main", 
+              width: 36, 
+              height: 36,
+              mr: 1.5
+            }}>
+              {userType === 'empresa' ? <BusinessIcon /> : <AccountCircleIcon />}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ color: "white", fontWeight: 600 }}>
+                {username}
+              </Typography>
+              <Chip
+                label={userType === 'empresa' ? 'Empresa' : 'Personal'}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: "0.65rem",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  mt: 0.5
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      <List sx={{ flex: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton onClick={() => handleNavigation(item.path)}>
@@ -99,11 +160,11 @@ export default function DashboardLayout({
           </ListItem>
         ))}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => router.push("/")}>
+          <ListItemButton onClick={handleLogout}>
             <ListItemIcon sx={{ color: "white" }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Logout" sx={{ color: "white" }} />
+            <ListItemText primary="Cerrar Sesión" sx={{ color: "white" }} />
           </ListItemButton>
         </ListItem>
       </List>

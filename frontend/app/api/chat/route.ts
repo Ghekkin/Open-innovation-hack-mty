@@ -167,7 +167,7 @@ function detectMCPTool(message: string): { tool: string; args: any } | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    const { message, userInfo } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -175,6 +175,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Extraer información del usuario
+    const username = userInfo?.username || 'Usuario';
+    const userType = userInfo?.type || 'desconocido';
+    const userId = userInfo?.userId || '';
 
     // Detectar si necesitamos llamar al MCP
     const mcpTool = detectMCPTool(message);
@@ -184,7 +189,17 @@ export async function POST(request: NextRequest) {
     if (mcpTool) {
       console.log(`[Chat] Detectada herramienta MCP: ${mcpTool.tool}`);
       console.log(`[Chat] URL del servidor MCP: ${MCP_SERVER_URL}`);
-      mcpData = await callMCPTool(mcpTool.tool, mcpTool.args);
+      console.log(`[Chat] Usuario: ${username} (${userType})`);
+      
+      // Agregar el ID del usuario a los argumentos del MCP
+      const mcpArgs = { ...mcpTool.args };
+      if (userType === 'empresa') {
+        mcpArgs.company_id = userId;
+      } else if (userType === 'personal') {
+        mcpArgs.user_id = userId;
+      }
+      
+      mcpData = await callMCPTool(mcpTool.tool, mcpArgs);
       
       if (mcpData) {
         console.log(`[Chat] Datos MCP recibidos:`, mcpData);
@@ -198,9 +213,28 @@ export async function POST(request: NextRequest) {
       console.log(`[Chat] No se detectó herramienta MCP para el mensaje: "${message}"`);
     }
 
+    // Construir contexto del usuario
+    const userContext = userType === 'empresa' 
+      ? `\n\nCONTEXTO DEL USUARIO:
+- Nombre: ${username}
+- Tipo de cuenta: Empresa
+- ID de empresa: ${userId}
+- Estás ayudando con finanzas empresariales`
+      : `\n\nCONTEXTO DEL USUARIO:
+- Nombre: ${username}
+- Tipo de cuenta: Personal
+- ID de usuario: ${userId}
+- Estás ayudando con finanzas personales`;
+
     // Contexto bancario para el asistente
-    const systemPrompt = `Eres un asistente virtual financiero de Banorte, un banco mexicano. 
+    const systemPrompt = `Eres Maya, la asistente virtual financiera de Banorte, un banco mexicano. 
 Tu trabajo es ayudar a los clientes con información financiera usando datos REALES de un servidor MCP.
+
+IDENTIDAD:
+- Tu nombre es Maya
+- Eres amigable, profesional y experta en finanzas
+- Siempre te presentas como "Maya, tu asistente financiera de Banorte" en la primera interacción
+- Personalizas tus respuestas según el tipo de cuenta del usuario (empresa o personal)
 
 Tienes acceso a las siguientes herramientas financieras:
 - Balance de empresa y personal
@@ -214,11 +248,14 @@ Tienes acceso a las siguientes herramientas financieras:
 
 IMPORTANTE: 
 - Si te proporcionan datos financieros reales (marcados como "DATOS FINANCIEROS REALES"), ÚSALOS en tu respuesta.
-- Presenta los números de forma clara y legible (con separadores de miles y formato de moneda).
+- Presenta los números de forma clara y legible (con separadores de miles y formato de moneda MXN).
 - Da insights y análisis útiles basados en los datos.
+- Personaliza tus respuestas usando el nombre del usuario cuando sea apropiado.
+- Si es una cuenta de empresa, enfócate en métricas empresariales (ROI, flujo de caja, etc.).
+- Si es una cuenta personal, enfócate en ahorro, presupuesto personal y metas financieras.
 - Si no hay datos disponibles, explica qué información necesitas.
 
-Responde de manera profesional, clara y en español.${mcpContext}`;
+Responde de manera profesional, clara y en español.${userContext}${mcpContext}`;
 
     // Llamada a Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {

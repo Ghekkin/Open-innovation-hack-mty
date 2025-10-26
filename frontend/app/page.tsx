@@ -13,15 +13,21 @@ import {
   createTheme,
   CssBaseline,
   InputAdornment,
-  IconButton
+  IconButton,
+  Alert,
+  Chip
 } from "@mui/material";
 import {
   Login as LoginIcon,
   Person as PersonIcon,
   Lock as LockIcon,
   Visibility,
-  VisibilityOff
+  VisibilityOff,
+  Business as BusinessIcon,
+  AccountCircle as AccountCircleIcon
 } from "@mui/icons-material";
+
+import { validateUser, saveUserInfo } from "@/lib/auth";
 
 // Create a custom theme with Banorte colors
 const theme = createTheme({
@@ -42,18 +48,31 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
-    // Guardar usuario en localStorage
-    if (username.trim()) {
-      localStorage.setItem("banorte_username", username.trim());
-      localStorage.setItem("banorte_login_time", new Date().toISOString());
-      
-      // Redirigir al dashboard
-      router.push("/dashboard");
+    // Validar usuario
+    const validation = validateUser(username);
+    
+    if (!validation.valid) {
+      setError(validation.error || "Usuario inválido");
+      return;
     }
+    
+    // Validar contraseña (mínimo 4 caracteres para este demo)
+    if (password.length < 4) {
+      setError("La contraseña debe tener al menos 4 caracteres");
+      return;
+    }
+    
+    // Guardar información del usuario
+    saveUserInfo(username, validation.type!);
+    
+    // Redirigir al dashboard
+    router.push("/dashboard");
   };
 
   return (
@@ -113,21 +132,64 @@ export default function Home() {
               variant="body2"
               sx={{
                 color: "text.secondary",
-                mb: 4
+                mb: 3
               }}
             >
               Ingresa tus credenciales para continuar
             </Typography>
+
+            {/* Tipos de cuenta */}
+            <Box sx={{ 
+              display: "flex", 
+              gap: 2, 
+              justifyContent: "center",
+              mb: 3,
+              flexWrap: "wrap"
+            }}>
+              <Chip
+                icon={<BusinessIcon />}
+                label="Empresa: E001-E025"
+                variant="outlined"
+                sx={{
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  fontWeight: 500
+                }}
+              />
+              <Chip
+                icon={<AccountCircleIcon />}
+                label="Personal: 1-25"
+                variant="outlined"
+                sx={{
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  fontWeight: 500
+                }}
+              />
+            </Box>
+
+            {/* Error Alert */}
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ mb: 3, textAlign: "left" }}
+                onClose={() => setError("")}
+              >
+                {error}
+              </Alert>
+            )}
 
             {/* Login Form */}
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
                 label="Usuario"
+                placeholder="Ej: E001 o 15"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 variant="outlined"
                 required
+                error={!!error}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
