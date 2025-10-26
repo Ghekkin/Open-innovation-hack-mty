@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -58,6 +58,8 @@ export default function DashboardPage() {
   const [aiResponse, setAiResponse] = useState<string>("");
   const [showAiResponse, setShowAiResponse] = useState(false);
   const [isResponseExpanded, setIsResponseExpanded] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Obtener información del usuario del localStorage
@@ -135,9 +137,60 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
+  // Función para convertir **texto** a negritas
+  const formatTextWithBold = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return (
+          <Box component="span" key={index} sx={{ fontWeight: 'bold' }}>
+            {boldText}
+          </Box>
+        );
+      }
+      return part;
+    });
+  };
+
   const getCategoryColor = (index: number) => {
     const colors = ["#EC0029", "#FF3355", "#C00020", "#6A6867", "#C7C9C9"];
     return colors[index % colors.length];
+  };
+
+  // Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Función para simular efecto de typing
+  const simulateTyping = (fullText: string) => {
+    return new Promise<void>((resolve) => {
+      const words = fullText.split(' ');
+      let currentIndex = 0;
+      const typingSpeed = 50; // ms por palabra
+
+      setIsTyping(true);
+      setAiResponse('');
+
+      const typeNextWord = () => {
+        if (currentIndex < words.length) {
+          const partialText = words.slice(0, currentIndex + 1).join(' ');
+          setAiResponse(partialText);
+          currentIndex++;
+          typingTimeoutRef.current = setTimeout(typeNextWord, typingSpeed);
+        } else {
+          setIsTyping(false);
+          resolve();
+        }
+      };
+
+      typeNextWord();
+    });
   };
 
   const handleAiAnalysis = async (e: React.FormEvent) => {
@@ -172,16 +225,22 @@ export default function DashboardPage() {
       });
 
       const data = await response.json();
-      setAiResponse(data.response || 'No se pudo generar un análisis');
+      const fullResponse = data.response || 'No se pudo generar un análisis';
+      
       setShowAiResponse(true);
       setIsResponseExpanded(true);
       setInputValue("");
+      setIsAnalyzing(false);
+      
+      // Simular efecto de typing
+      await simulateTyping(fullResponse);
+      
     } catch (error) {
       console.error('Error:', error);
-      setAiResponse('Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.');
+      const errorResponse = 'Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.';
       setShowAiResponse(true);
-    } finally {
       setIsAnalyzing(false);
+      await simulateTyping(errorResponse);
     }
   };
 
@@ -353,16 +412,37 @@ export default function DashboardPage() {
               Análisis Financiero
             </Typography>
             {isResponseExpanded && (
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.6,
-                  fontSize: { xs: "0.8rem", sm: "0.875rem" }
-                }}
-              >
-                {aiResponse}
-              </Typography>
+              <Box>
+                <Typography 
+                  variant="body2" 
+                  component="div"
+                  sx={{ 
+                    whiteSpace: "pre-wrap",
+                    lineHeight: 1.6,
+                    fontSize: { xs: "0.8rem", sm: "0.875rem" }
+                  }}
+                >
+                  {formatTextWithBold(aiResponse)}
+                </Typography>
+                {/* Cursor parpadeante cuando está escribiendo */}
+                {isTyping && (
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "inline-block",
+                      width: "8px",
+                      height: "14px",
+                      bgcolor: "info.dark",
+                      ml: 0.5,
+                      animation: "blink 1s infinite",
+                      "@keyframes blink": {
+                        "0%, 49%": { opacity: 1 },
+                        "50%, 100%": { opacity: 0 }
+                      }
+                    }}
+                  />
+                )}
+              </Box>
             )}
           </Alert>
         )}

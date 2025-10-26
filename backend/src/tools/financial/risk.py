@@ -4,6 +4,35 @@ import logging
 
 logger = setup_logger('risk_tools', logging.INFO)
 
+def safe_float_from_result(result, key=None, index=0):
+    """
+    Convierte de manera segura un resultado de MySQL a float.
+    Maneja diferentes formatos: dict, list[dict], tuple, list.
+    """
+    try:
+        # Caso 1: Lista con un diccionario dentro [{'key': value}]
+        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            if key:
+                return float(result[0].get(key) or 0)
+            else:
+                # Si no hay key, tomar el primer valor del dict
+                return float(list(result[0].values())[0] or 0)
+        # Caso 2: Diccionario directo {'key': value}
+        elif isinstance(result, dict):
+            if key:
+                return float(result.get(key) or 0)
+            else:
+                return float(list(result.values())[0] or 0)
+        # Caso 3: Tupla o lista con valores [value1, value2, ...]
+        elif isinstance(result, (list, tuple)) and len(result) > index:
+            return float(result[index] or 0)
+        else:
+            logger.warning(f"Formato de resultado inesperado: {type(result)} - {result}")
+            return 0.0
+    except (ValueError, TypeError, IndexError, KeyError) as e:
+        logger.error(f"Error al convertir resultado a float: {e}, result={result}")
+        return 0.0
+
 def get_financial_health_score_tool(company_id: str = None, user_id: str = None) -> dict:
     """
     Calcula un score de salud financiera (0-100).
@@ -112,15 +141,37 @@ def assess_financial_risk_tool(company_id: str = None) -> dict:
             params.append(company_id)
         
         result = db.execute_query(query, tuple(params), fetch='one')
-        income = float(result[0] or 0)
-        expense = float(result[1] or 0)
+        
+        # Manejar diferentes formatos de resultado
+        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+            income = float(result[0].get('income') or 0)
+            expense = float(result[0].get('expense') or 0)
+        elif isinstance(result, dict):
+            income = float(result.get('income') or 0)
+            expense = float(result.get('expense') or 0)
+        elif isinstance(result, (list, tuple)) and len(result) >= 2:
+            income = float(result[0] or 0)
+            expense = float(result[1] or 0)
+        else:
+            logger.warning(f"Formato de resultado inesperado en assess_financial_risk: {type(result)} - {result}")
+            income = 0
+            expense = 0
 
-        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM finanzas_empresa"
+        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance FROM finanzas_empresa"
         balance_params = []
         if company_id:
             balance_query += " WHERE empresa_id = %s"
             balance_params.append(company_id)
-        balance = float(db.execute_query(balance_query, tuple(balance_params), fetch='one')[0] or 0)
+        
+        balance_result = db.execute_query(balance_query, tuple(balance_params), fetch='one')
+        if isinstance(balance_result, list) and len(balance_result) > 0 and isinstance(balance_result[0], dict):
+            balance = float(balance_result[0].get('balance') or 0)
+        elif isinstance(balance_result, dict):
+            balance = float(balance_result.get('balance') or 0)
+        elif isinstance(balance_result, (list, tuple)) and len(balance_result) >= 1:
+            balance = float(balance_result[0] or 0)
+        else:
+            balance = 0
 
         risk_score = 0
         risk_factors = []
@@ -240,17 +291,18 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
     try:
         db = get_db_connection()
         
-        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) FROM finanzas_empresa"
+        balance_query = "SELECT SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance FROM finanzas_empresa"
         params = []
         if company_id:
             balance_query += " WHERE empresa_id = %s"
             params.append(company_id)
-        current_balance = float(db.execute_query(balance_query, tuple(params), fetch='one')[0] or 0)
+        balance_result = db.execute_query(balance_query, tuple(params), fetch='one')
+        current_balance = safe_float_from_result(balance_result, 'balance')
 
         # Calcular promedios mensuales de los últimos 6 meses
         if company_id:
             income_query = """
-                SELECT AVG(monthly_total) FROM (
+                SELECT AVG(monthly_total) as avg_income FROM (
                     SELECT SUM(monto) as monthly_total 
                     FROM finanzas_empresa 
                     WHERE tipo = 'ingreso' AND empresa_id = %s 
@@ -259,7 +311,7 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
                 ) as monthly_incomes
             """
             expense_query = """
-                SELECT AVG(monthly_total) FROM (
+                SELECT AVG(monthly_total) as avg_expense FROM (
                     SELECT SUM(monto) as monthly_total 
                     FROM finanzas_empresa 
                     WHERE tipo = 'gasto' AND empresa_id = %s 
@@ -267,11 +319,13 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
                     GROUP BY YEAR(fecha), MONTH(fecha)
                 ) as monthly_expenses
             """
-            avg_income = float(db.execute_query(income_query, (company_id,), fetch='one')[0] or 0)
-            avg_expense = float(db.execute_query(expense_query, (company_id,), fetch='one')[0] or 0)
+            income_result = db.execute_query(income_query, (company_id,), fetch='one')
+            expense_result = db.execute_query(expense_query, (company_id,), fetch='one')
+            avg_income = safe_float_from_result(income_result, 'avg_income')
+            avg_expense = safe_float_from_result(expense_result, 'avg_expense')
         else:
             income_query = """
-                SELECT AVG(monthly_total) FROM (
+                SELECT AVG(monthly_total) as avg_income FROM (
                     SELECT SUM(monto) as monthly_total 
                     FROM finanzas_empresa 
                     WHERE tipo = 'ingreso'
@@ -280,7 +334,7 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
                 ) as monthly_incomes
             """
             expense_query = """
-                SELECT AVG(monthly_total) FROM (
+                SELECT AVG(monthly_total) as avg_expense FROM (
                     SELECT SUM(monto) as monthly_total 
                     FROM finanzas_empresa 
                     WHERE tipo = 'gasto'
@@ -288,8 +342,10 @@ def get_stress_test_tool(company_id: str = None, income_reduction: float = 30.0,
                     GROUP BY YEAR(fecha), MONTH(fecha)
                 ) as monthly_expenses
             """
-            avg_income = float(db.execute_query(income_query, fetch='one')[0] or 0)
-            avg_expense = float(db.execute_query(expense_query, fetch='one')[0] or 0)
+            income_result = db.execute_query(income_query, fetch='one')
+            expense_result = db.execute_query(expense_query, fetch='one')
+            avg_income = safe_float_from_result(income_result, 'avg_income')
+            avg_expense = safe_float_from_result(expense_result, 'avg_expense')
 
         stressed_income = float(avg_income) * (1 - income_reduction / 100)
         stressed_expense = float(avg_expense) * (1 + expense_increase / 100)
