@@ -7,9 +7,10 @@ from dateutil.relativedelta import relativedelta
 
 logger = setup_logger('expense_tools', logging.INFO)
 
-def get_expenses_by_category_tool(company_id: str = None, start_date: str = None, end_date: str = None) -> dict:
+def get_expenses_by_category_tool(company_id: str = None, user_id: str = None, start_date: str = None, end_date: str = None) -> dict:
     """
-    Analiza los gastos de una empresa agrupados por categoría para un período de tiempo.
+    Analiza los gastos agrupados por categoría para un período de tiempo.
+    Funciona tanto para empresas como para usuarios personales.
     Si no se especifican fechas, se utiliza el mes actual por defecto.
     """
     try:
@@ -22,20 +23,26 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
             start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime("%Y-%m-%d")
             end_date = (today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)).strftime("%Y-%m-%d")
 
-        logger.info(f"Consultando gastos para company_id={company_id}, período: {start_date} a {end_date}")
+        # Determinar si es empresa o usuario personal
+        is_personal = user_id is not None
+        table_name = "finanzas_personales" if is_personal else "finanzas_empresa"
+        id_column = "id_usuario" if is_personal else "empresa_id"
+        entity_id = user_id if is_personal else company_id
+        
+        logger.info(f"Consultando gastos para {'usuario' if is_personal else 'empresa'}={entity_id}, período: {start_date} a {end_date}")
 
-        query = """
+        query = f"""
             SELECT categoria, SUM(monto) as total, COUNT(*) as cantidad
-            FROM finanzas_empresa
+            FROM {table_name}
             WHERE tipo = 'gasto'
             AND fecha >= %s
             AND fecha <= %s
         """
         params.extend([start_date, end_date])
         
-        if company_id:
-            query += " AND empresa_id = %s"
-            params.append(company_id)
+        if entity_id:
+            query += f" AND {id_column} = %s"
+            params.append(entity_id)
             
         query += " GROUP BY categoria ORDER BY SUM(monto) DESC"
         

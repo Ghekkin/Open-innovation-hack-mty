@@ -95,6 +95,7 @@ def get_personal_balance(user_id: Optional[str] = None) -> dict:
 @mcp.tool()
 def analyze_expenses_by_category(
     company_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ) -> dict:
@@ -106,15 +107,17 @@ def analyze_expenses_by_category(
     
     Args:
         company_id: ID de la empresa (opcional)
+        user_id: ID del usuario para finanzas personales (opcional)
         start_date: Fecha de inicio en formato YYYY-MM-DD (opcional)
         end_date: Fecha de fin en formato YYYY-MM-DD (opcional)
     
     Returns:
         Diccionario con categorías, totales y porcentajes de gasto
     """
-    logger.info(f"Ejecutando analyze_expenses_by_category: company={company_id}, dates={start_date} to {end_date}")
+    logger.info(f"Ejecutando analyze_expenses_by_category: company={company_id}, user={user_id}, dates={start_date} to {end_date}")
     return get_expenses_by_category_tool(
         company_id=company_id,
+        user_id=user_id,
         start_date=start_date,
         end_date=end_date
     )
