@@ -53,9 +53,15 @@ def generate_financial_plan_tool(
             """
             balance_rows = db.execute_query(balance_query, (entity_id,), fetch=True)
             current_balance = 0.0
-            if balance_rows and isinstance(balance_rows, list):
-                first = balance_rows[0] or {}
-                current_balance = float(first.get('balance') or 0)
+            if balance_rows and isinstance(balance_rows, list) and len(balance_rows) > 0:
+                first = balance_rows[0]
+                logger.info(f"Balance row type: {type(first)}, content: {first}")
+                if isinstance(first, dict):
+                    balance_val = first.get('balance', 0)
+                    logger.info(f"Balance value type: {type(balance_val)}, value: {balance_val}")
+                    current_balance = float(balance_val) if balance_val is not None else 0.0
+                else:
+                    logger.warning(f"Expected dict but got {type(first)}: {first}")
             
             # Obtener promedios mensuales de los últimos 6 meses
             avg_query = f"""
@@ -69,10 +75,16 @@ def generate_financial_plan_tool(
             avg_rows = db.execute_query(avg_query, (entity_id,), fetch=True)
             avg_monthly_income = 0.0
             avg_monthly_expense = 0.0
-            if avg_rows and isinstance(avg_rows, list):
-                first = avg_rows[0] or {}
-                avg_monthly_income = float(first.get('avg_income') or 0)
-                avg_monthly_expense = float(first.get('avg_expense') or 0)
+            if avg_rows and isinstance(avg_rows, list) and len(avg_rows) > 0:
+                first = avg_rows[0]
+                logger.info(f"Avg row type: {type(first)}, content: {first}")
+                if isinstance(first, dict):
+                    income_val = first.get('avg_income', 0)
+                    expense_val = first.get('avg_expense', 0)
+                    avg_monthly_income = float(income_val) if income_val is not None else 0.0
+                    avg_monthly_expense = float(expense_val) if expense_val is not None else 0.0
+                else:
+                    logger.warning(f"Expected dict but got {type(first)}: {first}")
             
             # Obtener gastos por categoría
             category_query = f"""
