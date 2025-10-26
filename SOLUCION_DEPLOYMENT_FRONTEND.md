@@ -1,233 +1,211 @@
-# Solución: Deployment Frontend Fallando en Coolify
+# Solución: Frontend No Despliega en Coolify
 
 ## Problema
-El deployment del frontend está fallando con el error:
+El deployment falla con el error:
 ```
 Error response from daemon: container [...] is not running
 ```
 
-El contenedor helper se cierra inmediatamente después de iniciarse.
+El contenedor helper se detiene inmediatamente sin llegar a la fase de build.
 
 ## Causa
-Coolify no puede encontrar los archivos del frontend porque:
-1. El **Base Directory** no está configurado
-2. O la configuración del build pack es incorrecta
+Coolify está intentando hacer el build desde la raíz del repositorio (`/`), pero el código del frontend está en la carpeta `frontend/`.
 
-## Solución Paso a Paso
+## Solución 1: Configurar Base Directory (RECOMENDADO)
 
-### PASO 1: Verificar Configuración en Coolify
+### Pasos en Coolify:
 
-Ve a tu aplicación frontend en Coolify y verifica:
+1. **Ve a tu aplicación frontend** → **Configuration** → **General**
 
-#### En la pestaña "General":
+2. **Busca el campo "Base Directory"**:
+   - Si está visible, edítalo directamente
+   - Si NO está visible, ve a **Advanced** y búscalo ahí
+   - Algunos nombres alternativos: "Working Directory", "Source Directory"
 
-1. **Source → Base Directory**: 
-   - ✅ DEBE estar configurado como: `frontend`
-   - ❌ NO debe estar vacío
+3. **Establece el valor**: `frontend`
 
-2. **Build Pack**:
-   - Opción A (Recomendada): `dockerfile`
-   - Opción B: `nixpacks`
+4. **Verifica otros campos**:
+   - **Build Pack**: `Nixpacks` (como lo tienes ahora)
+   - **Port**: `3000`
+   - **Install Command**: (déjalo vacío o `npm ci`)
+   - **Build Command**: (déjalo vacío o `npm run build`)
+   - **Start Command**: (déjalo vacío o `npm run start`)
 
-3. **Dockerfile Location** (solo si usas dockerfile):
-   - Debe ser: `Dockerfile`
+5. **Guarda los cambios** (botón **Save**)
 
-4. **Port**:
-   - Debe ser: `3000`
+6. **Redeploy** (botón **Redeploy**)
 
-5. **Publish Directory**:
-   - Déjalo vacío (Next.js no lo necesita)
-
-### PASO 2: Configurar Variables de Entorno
-
-En la pestaña "Environment Variables", agrega:
-
-```bash
-MCP_SERVER_URL=https://tu-backend-url.com
-NODE_ENV=production
-NEXT_TELEMETRY_DISABLED=1
+### Verificación:
+En los logs del deployment, deberías ver algo como:
+```
+Cloning into '/app'...
+cd /app/frontend
+npm ci
+npm run build
 ```
 
-**Importante:** Reemplaza `https://tu-backend-url.com` con la URL real de tu backend.
+## Solución 2: Cambiar a Dockerfile
 
-### PASO 3: Verificar Archivos en el Repositorio
+Si la Solución 1 no funciona o no encuentras el campo Base Directory:
 
-Asegúrate de que estos archivos existan en tu repositorio:
+### Pasos:
 
-```
-frontend/
-├── Dockerfile              ← NUEVO (ya creado)
-├── .dockerignore          ← NUEVO (ya creado)
-├── next.config.ts         ← ACTUALIZADO con output: 'standalone'
-├── nixpacks.toml          ← Existe
-├── package.json           ← Existe
-└── ... (otros archivos)
-```
+1. **Asegúrate de que los archivos estén en el repositorio**:
+   - Ya creé `frontend/Dockerfile`
+   - Ya creé `frontend/.dockerignore`
+   - Ya actualicé `frontend/next.config.ts`
 
-### PASO 4: Hacer Commit y Push
+2. **En Coolify** → **Configuration** → **General**:
+   - **Build Pack**: Cambia de `Nixpacks` a `Dockerfile`
+   - **Base Directory**: `frontend`
+   - **Dockerfile Location**: `Dockerfile` (o `./Dockerfile`)
+   - **Port**: `3000`
 
-Si acabas de crear los archivos nuevos (Dockerfile, .dockerignore, next.config.ts actualizado):
+3. **Guarda y Redeploy**
 
-```powershell
-# Agregar archivos
-git add frontend/Dockerfile
-git add frontend/.dockerignore
-git add frontend/next.config.ts
-git add CONFIGURACION_COOLIFY.md
-git add SOLUCION_DEPLOYMENT_FRONTEND.md
+## Solución 3: Mover el Frontend a la Raíz (NO RECOMENDADO)
 
-# Commit
-git commit -m "fix: Agregar Dockerfile y configuración para deployment en Coolify"
+Si ninguna de las anteriores funciona, podrías mover el código del frontend a la raíz del repositorio, pero esto NO es recomendado porque:
+- Rompe la estructura del proyecto
+- Dificulta el mantenimiento
+- No es una buena práctica
 
-# Push
-git push origin main
-```
+## Verificación de Variables de Entorno
 
-### PASO 5: Redeploy en Coolify
+Después de que el deployment funcione, verifica que tengas estas variables:
 
-1. Ve a tu aplicación frontend en Coolify
-2. Click en **"Redeploy"**
-3. Espera a que termine el deployment
-4. Revisa los logs
+1. **Ve a** → **Environment Variables**
 
-## Configuración Detallada por Build Pack
+2. **Agrega**:
+   ```bash
+   MCP_SERVER_URL=https://tu-backend-url.com
+   NODE_ENV=production
+   ```
 
-### Opción A: Usando Dockerfile (RECOMENDADO)
-
-**Ventajas:**
-- Más control sobre el proceso de build
-- Más confiable
-- Mejor optimización de capas
-- Más rápido en deployments subsecuentes
-
-**Configuración en Coolify:**
-```
-Base Directory: frontend
-Build Pack: dockerfile
-Dockerfile Location: Dockerfile
-Port: 3000
-```
-
-**Archivos necesarios:**
-- ✅ `frontend/Dockerfile` (ya creado)
-- ✅ `frontend/.dockerignore` (ya creado)
-- ✅ `frontend/next.config.ts` con `output: 'standalone'` (ya actualizado)
-
-### Opción B: Usando Nixpacks
-
-**Ventajas:**
-- Configuración más simple
-- Detección automática
-
-**Configuración en Coolify:**
-```
-Base Directory: frontend
-Build Pack: nixpacks
-Port: 3000
-```
-
-**Archivos necesarios:**
-- ✅ `frontend/nixpacks.toml` (ya existe)
-- ✅ `frontend/package.json` (ya existe)
-
-## Verificación del Deployment
-
-Después de hacer el redeploy, verifica:
-
-### 1. Logs de Build
-Deberías ver algo como:
-```
-[+] Building ...
- => [internal] load build definition from Dockerfile
- => [internal] load .dockerignore
- => [stage-0 1/5] FROM node:20-alpine
- => [stage-1 2/6] COPY package*.json ./
- => [stage-1 3/6] RUN npm ci
- => [stage-1 4/6] COPY . .
- => [stage-1 5/6] RUN npm run build
- ...
-```
-
-### 2. Logs de Runtime
-Deberías ver:
-```
-> next start
-ready - started server on 0.0.0.0:3000, url: http://localhost:3000
-```
-
-### 3. Acceso a la Aplicación
-- Abre la URL de tu frontend en Coolify
-- Deberías ver la página de inicio
-- Verifica que el dashboard funcione
+3. **Importante**: Reemplaza `https://tu-backend-url.com` con la URL real de tu backend
 
 ## Troubleshooting Adicional
 
-### Error: "Base directory not found"
-**Solución:** Verifica que en Coolify, el campo "Base Directory" esté configurado como `frontend` (sin `/` al inicio ni al final)
+### Si el build falla con errores de memoria:
 
-### Error: "Dockerfile not found"
-**Solución:** 
-1. Verifica que el archivo `frontend/Dockerfile` exista en el repositorio
-2. Haz push de los cambios
-3. En Coolify, verifica que "Dockerfile Location" sea `Dockerfile` (sin ruta)
+En **Advanced** → **Resource Limits**:
+- **Memory Limit**: `2048` (2GB)
+- **Memory Swap**: `2048`
 
-### Error: "npm ci failed"
-**Solución:**
-1. Verifica que `package-lock.json` exista en el repositorio
-2. Si no existe, genera uno localmente con `npm install` y haz commit
+### Si el build es muy lento:
 
-### Error: "Build failed" durante npm run build
-**Solución:**
-1. Revisa los logs específicos del error
-2. Puede ser un error de TypeScript o ESLint
-3. Prueba el build localmente: `cd frontend; npm run build`
+En **Advanced**:
+- Habilita **Build Cache** si está disponible
 
-### El deployment funciona pero la app no carga
-**Solución:**
-1. Verifica que el puerto sea `3000`
-2. Verifica que la variable `MCP_SERVER_URL` esté configurada
-3. Revisa los logs de runtime en Coolify
+### Si ves errores de npm:
 
-### Error de conexión con el backend
-**Solución:**
-1. Verifica que `MCP_SERVER_URL` apunte a la URL correcta del backend
-2. Verifica que el backend esté corriendo
-3. Verifica que no haya problemas de CORS
+Verifica que `frontend/package.json` tenga los scripts correctos:
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+## Comandos para Verificar Localmente
+
+Antes de deployar, verifica que el build funcione localmente:
+
+```powershell
+# Ir a la carpeta frontend
+cd frontend
+
+# Instalar dependencias
+npm ci
+
+# Build de producción
+npm run build
+
+# Iniciar en modo producción
+npm run start
+```
+
+Si esto funciona localmente, debería funcionar en Coolify.
+
+## Logs Útiles para Debugging
+
+Cuando hagas redeploy, revisa estos logs en Coolify:
+
+1. **Deployment Logs**: Muestra el proceso de build
+2. **Application Logs**: Muestra errores de runtime
+3. **Terminal**: Puedes ejecutar comandos dentro del contenedor
+
+### Comandos útiles en el Terminal de Coolify:
+
+```bash
+# Ver estructura de archivos
+ls -la
+
+# Ver si existe package.json
+cat package.json
+
+# Ver variables de entorno
+env | grep MCP
+
+# Ver logs de Next.js
+cat .next/build-manifest.json
+```
 
 ## Checklist Final
 
 Antes de hacer redeploy, verifica:
 
-- [ ] Base Directory configurado como `frontend`
-- [ ] Build Pack seleccionado (dockerfile o nixpacks)
-- [ ] Puerto configurado como `3000`
-- [ ] Variable `MCP_SERVER_URL` configurada
-- [ ] Archivos `Dockerfile` y `.dockerignore` existen (si usas dockerfile)
-- [ ] Archivo `next.config.ts` tiene `output: 'standalone'`
-- [ ] Cambios están en el repositorio (git push)
-- [ ] Has hecho click en "Redeploy" en Coolify
-
-## Comandos Útiles
-
-### Verificar localmente que el build funciona:
-```powershell
-cd frontend
-npm install
-npm run build
-npm run start
-```
-
-### Probar el Dockerfile localmente:
-```powershell
-cd frontend
-docker build -t frontend-test .
-docker run -p 3000:3000 -e MCP_SERVER_URL=http://localhost:8080 frontend-test
-```
+- [ ] Base Directory está configurado como `frontend`
+- [ ] Build Pack es `Nixpacks` o `Dockerfile`
+- [ ] Port es `3000`
+- [ ] Variables de entorno están configuradas
+- [ ] El código está pusheado al repositorio en GitHub
+- [ ] El branch correcto está seleccionado (main)
 
 ## Contacto
 
-Si después de seguir todos estos pasos el problema persiste:
-1. Copia los logs completos del deployment
-2. Verifica que el Base Directory esté configurado
-3. Intenta con la otra opción de Build Pack (dockerfile vs nixpacks)
+Si el problema persiste después de seguir estos pasos:
+
+1. Toma captura de pantalla de:
+   - La configuración General
+   - Los logs completos del deployment
+   - La sección Advanced
+
+2. Verifica que el repositorio en GitHub tenga:
+   - La carpeta `frontend/` con todo el código
+   - El archivo `frontend/package.json`
+   - El archivo `frontend/Dockerfile` (si usas esa opción)
+
+3. Intenta hacer un deployment manual desde la terminal de Coolify para ver errores más detallados
+
+## Notas Importantes
+
+- **NO** modifiques el código durante el deployment
+- **NO** hagas múltiples redeploys simultáneos
+- **ESPERA** a que cada deployment termine (exitoso o fallido) antes de hacer otro
+- **REVISA** los logs completos, no solo el final
+- **VERIFICA** que el backend esté corriendo antes de probar el frontend
+
+## Arquitectura Correcta
+
+```
+Repositorio GitHub: Ghekkin/Open-innovation-hack-mty
+│
+├── backend/          ← Backend separado en Coolify
+│   ├── src/
+│   ├── requirements.txt
+│   └── ...
+│
+└── frontend/         ← Frontend (ESTE es el Base Directory)
+    ├── app/
+    ├── package.json  ← Coolify necesita encontrar ESTE archivo
+    ├── next.config.ts
+    ├── Dockerfile    ← Para opción Dockerfile
+    └── ...
+```
+
+Coolify debe buscar en `frontend/` para encontrar el `package.json` y hacer el build correctamente.
 
