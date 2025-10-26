@@ -4,20 +4,8 @@ title: Arquitectura de la Solución
 
 ### Diagrama de Arquitectura y Flujo de Datos
 La arquitectura está diseñada para ser modular, escalable y mantenible, separando claramente la presentación, la lógica de negocio y los datos.
+![Diagrama](../../../assets/diagrama.webp)
 
-**Diagrama de Flujo Lógico:**
-<Code code={`
-+-----------------------+      +-------------------------+      +--------------------------+      +--------------------+
-|      Frontend         |      |     API Gateway         |      |      Backend (MCP)       |      |     Base de Datos  |
-| (Next.js / React)     | <--> |  (Next.js API Route)    | <--> |    (Python / FastMCP)    | <--> |      (MySQL)       |
-+-----------------------+      +-------------------------+      +--------------------------+      +--------------------+
-           ^                             ^                                |
-           |                             |                                v
-           |                             |                  +--------------------------+
-           +-----------------------------+                  | Herramientas Financieras |
-                                                            | (Análisis, Proyección..) |
-                                                            +--------------------------+
-`} />
 
 **Ciclo de Vida de una Solicitud (Ej: "Cuánto gasté este mes?"):**
 1.  **Usuario**: Escribe la pregunta en la interfaz de chat (Frontend).

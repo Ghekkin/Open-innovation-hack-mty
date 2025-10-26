@@ -6,8 +6,9 @@
 ## Enlaces
 
 *   **Video Demo:** [LINK_VIDEO_DEMO]
-*   **Diagrama de Arquitectura:** [LINK_DIAGRAMA]
-*   **Documentación Técnica:** [LINK_DOCS_DESPLEGADA]
+*   **Documentación Técnica:** https://docs.banortemaya.tech
+*   **Diagrama de Arquitectura:** ![diagrama](./img/diagrama.jpg)
+
 
 ## Concepto de la Solución
 
