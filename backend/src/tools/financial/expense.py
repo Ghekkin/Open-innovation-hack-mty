@@ -25,7 +25,7 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
         logger.info(f"Consultando gastos para company_id={company_id}, período: {start_date} a {end_date}")
 
         query = """
-            SELECT categoria, SUM(monto), COUNT(*)
+            SELECT categoria, SUM(monto) as total, COUNT(*) as cantidad
             FROM finanzas_empresa
             WHERE tipo = 'gasto'
             AND fecha >= %s
@@ -60,15 +60,16 @@ def get_expenses_by_category_tool(company_id: str = None, start_date: str = None
                 "message": "No hay gastos registrados para el período y empresa especificados."
             }
             
-        total_expenses = sum(e[1] for e in expenses_by_cat)
+        # Los resultados vienen como diccionarios con los alias definidos en el query
+        total_expenses = sum(float(e['total']) for e in expenses_by_cat)
         
         categorias = [
             {
-                "categoria": cat,
-                "total": float(total),
-                "transacciones": count,
-                "porcentaje": round((float(total) / total_expenses) * 100, 2) if total_expenses > 0 else 0
-            } for cat, total, count in expenses_by_cat
+                "categoria": e['categoria'],
+                "total": float(e['total']),
+                "transacciones": int(e['cantidad']),
+                "porcentaje": round((float(e['total']) / total_expenses) * 100, 2) if total_expenses > 0 else 0
+            } for e in expenses_by_cat
         ]
         
         result = {
