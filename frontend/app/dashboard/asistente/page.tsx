@@ -10,13 +10,20 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton
+  IconButton,
+  Tooltip
 } from "@mui/material";
 import {
   Send as SendIcon,
   SmartToy as AssistantIcon,
   Person as PersonIcon,
-  ExpandMore as ExpandMoreIcon
+  ExpandMore as ExpandMoreIcon,
+  Mic as MicIcon,
+  Stop as StopIcon,
+  VolumeUp as VolumeUpIcon,
+  StopCircle as StopCircleIcon,
+  Phone as PhoneIcon,
+  CallEnd as CallEndIcon
 } from "@mui/icons-material";
 import { getCurrentUser } from "@/lib/auth";
 import { 
@@ -33,6 +40,9 @@ interface Message {
   rawJson?: any;
 }
 
+const ELEVENLABS_API_KEY = "5ab2b24e65cff23cc1ef0da942133d90";
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice
+
 export default function AsistentePage() {
   const [inputValue, setInputValue] = useState("");
   const [username, setUsername] = useState<string>("");
@@ -40,7 +50,17 @@ export default function AsistentePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState<string | null>(null);
+  const [isInCall, setIsInCall] = useState(false); // Nuevo: modo conversación
+  const [isListening, setIsListening] = useState(false); // Nuevo: escuchando en llamada
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const conversationRecognitionRef = useRef<any>(null); // Para el modo llamada
+  const isInCallRef = useRef<boolean>(false); // Ref para el estado de llamada (siempre actualizado)
 
   // Cargar historial de conversación al montar el componente
   useEffect(() => {
@@ -152,6 +172,471 @@ export default function AsistentePage() {
     }
   };
 
+  // Función para enviar mensaje y obtener respuesta (usada en modo llamada)
+  const sendMessageAndGetResponse = async (messageText: string) => {
+    console.log('[Llamada] Enviando mensaje:', messageText);
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: messageText,
+      sender: "user",
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const user = getCurrentUser();
+      
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
+      console.log('[Llamada] Haciendo fetch a API...');
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: messageText,
+          conversationHistory: conversationHistory,
+          userInfo: user ? {
+            username: user.username,
+            type: user.type,
+            userId: user.userId
+          } : null
+        })
+      });
+
+      const data = await response.json();
+      console.log('[Llamada] Respuesta recibida:', data.response?.substring(0, 50) + '...');
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.response || 'No se pudo generar una respuesta',
+        sender: "assistant",
+        timestamp: new Date(),
+        rawJson: data.rawJson
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
+      
+      // Reproducir la respuesta automáticamente con audio
+      console.log('[Llamada] Reproduciendo audio de respuesta...');
+      
+      // No usar await aquí para no bloquear
+      playMessageAudioDirect(assistantMessage.content)
+        .then(() => {
+          console.log('[Llamada] Audio completado exitosamente');
+          // Pequeño delay antes de reiniciar la escucha
+          setTimeout(() => {
+            if (isInCallRef.current) {
+              console.log('[Llamada] Reiniciando escucha automáticamente...');
+              startConversationListening();
+            } else {
+              console.log('[Llamada] No se reinicia escucha - llamada terminada');
+            }
+          }, 300);
+        })
+        .catch((audioError) => {
+          console.error('[Llamada] Error al reproducir audio:', audioError);
+          // Incluso si falla el audio, reiniciar la escucha
+          setTimeout(() => {
+            if (isInCallRef.current) {
+              console.log('[Llamada] Reiniciando escucha después de error de audio...');
+              startConversationListening();
+            }
+          }, 500);
+        });
+      
+    } catch (error) {
+      console.error('[Llamada] Error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'Lo siento, hubo un error al procesar tu consulta.',
+        sender: "assistant",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setIsLoading(false);
+      
+      // Reintentar escuchar incluso si hay error
+      setTimeout(() => {
+        if (isInCallRef.current) {
+          console.log('[Llamada] Reiniciando escucha después de error general...');
+          startConversationListening();
+        }
+      }, 1000);
+    }
+  };
+
+  // Función para iniciar el modo conversación (llamada)
+  const startConversation = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('Tu navegador no soporta reconocimiento de voz. Por favor, usa Chrome, Edge o Safari.');
+      return;
+    }
+
+    console.log('[Conversación] Iniciando modo llamada');
+    setIsInCall(true);
+    isInCallRef.current = true;
+    
+    // Pequeño delay para asegurar que el estado se actualice
+    setTimeout(() => {
+      startConversationListening();
+    }, 100);
+  };
+
+  // Función para iniciar la escucha en modo conversación
+  const startConversationListening = () => {
+    // Verificar que aún estamos en llamada usando la ref
+    if (!isInCallRef.current) {
+      console.log('[Escucha] No se inicia porque ya no estamos en llamada');
+      return;
+    }
+    
+    // Si ya hay un recognition activo, detenerlo primero
+    if (conversationRecognitionRef.current) {
+      console.log('[Escucha] Deteniendo reconocimiento anterior...');
+      try {
+        conversationRecognitionRef.current.stop();
+      } catch (e) {
+        console.log('[Escucha] Error al detener reconocimiento anterior:', e);
+      }
+      conversationRecognitionRef.current = null;
+    }
+    
+    console.log('[Escucha] Iniciando nuevo reconocimiento de voz...');
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.lang = 'es-MX';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = () => {
+      console.log('[Escucha] Reconocimiento iniciado - Puedes hablar ahora');
+      setIsListening(true);
+    };
+    
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      const confidence = event.results[0][0].confidence;
+      console.log('[Escucha] Usuario dijo:', transcript, '(confianza:', confidence, ')');
+      setIsListening(false);
+      
+      // Detener el reconocimiento inmediatamente
+      recognition.stop();
+      conversationRecognitionRef.current = null;
+      
+      // Enviar el mensaje automáticamente (esto manejará el reinicio de la escucha)
+      await sendMessageAndGetResponse(transcript);
+    };
+    
+    recognition.onerror = (event: any) => {
+      console.error('[Escucha] Error en reconocimiento de voz:', event.error);
+      setIsListening(false);
+      conversationRecognitionRef.current = null;
+      
+      // Solo reintentar si es un error recuperable y aún estamos en llamada
+      if (isInCallRef.current && event.error !== 'aborted' && event.error !== 'no-speech') {
+        console.log('[Escucha] Reintentando en 1 segundo...');
+        setTimeout(() => {
+          if (isInCallRef.current) {
+            startConversationListening();
+          }
+        }, 1000);
+      } else if (event.error === 'no-speech' && isInCallRef.current) {
+        // Si no se detectó voz, reiniciar inmediatamente
+        console.log('[Escucha] No se detectó voz, reintentando...');
+        setTimeout(() => {
+          if (isInCallRef.current) {
+            startConversationListening();
+          }
+        }, 500);
+      }
+    };
+    
+    recognition.onend = () => {
+      console.log('[Escucha] Reconocimiento terminado');
+      setIsListening(false);
+    };
+    
+    conversationRecognitionRef.current = recognition;
+    
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error('[Escucha] Error al iniciar reconocimiento:', e);
+      setIsListening(false);
+      conversationRecognitionRef.current = null;
+      // Reintentar
+      setTimeout(() => {
+        if (isInCallRef.current) {
+          startConversationListening();
+        }
+      }, 1000);
+    }
+  };
+
+  // Función para terminar el modo conversación
+  const endConversation = () => {
+    console.log('[Conversación] Terminando modo llamada');
+    setIsInCall(false);
+    isInCallRef.current = false;
+    setIsListening(false);
+    
+    if (conversationRecognitionRef.current) {
+      try {
+        conversationRecognitionRef.current.stop();
+      } catch (e) {
+        console.log('[Conversación] Error al detener reconocimiento:', e);
+      }
+      conversationRecognitionRef.current = null;
+    }
+    
+    stopAudio();
+  };
+
+  // Función para grabar mensaje individual (botón de micrófono en input)
+  const toggleRecording = () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+    } else {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.lang = 'es-MX';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => {
+          setIsRecording(true);
+        };
+        
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInputValue(transcript);
+          setIsRecording(false);
+        };
+        
+        recognition.onerror = (event: any) => {
+          console.error('Error:', event.error);
+          setIsRecording(false);
+        };
+        
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
+        
+        recognitionRef.current = recognition;
+        recognition.start();
+      } else {
+        alert('Tu navegador no soporta reconocimiento de voz.');
+      }
+    }
+  };
+
+  // Función para reproducir texto con ElevenLabs TTS (modo llamada)
+  const playMessageAudioDirect = async (text: string): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+      let resolved = false;
+      
+      try {
+        console.log('[Audio] Limpiando texto para TTS...');
+        const cleanText = text
+          .replace(/<[^>]*>/g, '')
+          .replace(/\*\*/g, '')
+          .replace(/\n/g, ' ')
+          .trim();
+
+        if (!cleanText) {
+          console.log('[Audio] Texto vacío, omitiendo reproducción');
+          resolve();
+          return;
+        }
+
+        console.log('[Audio] Texto limpio:', cleanText.substring(0, 100) + '...');
+        console.log('[Audio] Llamando a ElevenLabs API...');
+        
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+          {
+            method: 'POST',
+            headers: {
+              'Accept': 'audio/mpeg',
+              'Content-Type': 'application/json',
+              'xi-api-key': ELEVENLABS_API_KEY
+            },
+            body: JSON.stringify({
+              text: cleanText,
+              model_id: 'eleven_multilingual_v2',
+              voice_settings: {
+                stability: 0.5,
+                similarity_boost: 0.5
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[Audio] Error de API:', response.status, errorText);
+          throw new Error(`Error al generar audio: ${response.status}`);
+        }
+
+        console.log('[Audio] Audio recibido de ElevenLabs, creando blob...');
+        const audioBlob = await response.blob();
+        console.log('[Audio] Blob size:', audioBlob.size, 'bytes');
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        console.log('[Audio] Configurando eventos del audio...');
+        
+        audio.onloadeddata = () => {
+          console.log('[Audio] Audio cargado, duración:', audio.duration, 'segundos');
+        };
+        
+        audio.onended = () => {
+          console.log('[Audio] Evento onended disparado - Audio terminado');
+          if (!resolved) {
+            resolved = true;
+            URL.revokeObjectURL(audioUrl);
+            currentAudioRef.current = null;
+            resolve();
+          }
+        };
+        
+        audio.onerror = (e) => {
+          console.error('[Audio] Error al reproducir:', e);
+          if (!resolved) {
+            resolved = true;
+            URL.revokeObjectURL(audioUrl);
+            currentAudioRef.current = null;
+            reject(new Error('Error al reproducir audio'));
+          }
+        };
+        
+        // Fallback: si el evento onended no se dispara por alguna razón
+        audio.onpause = () => {
+          console.log('[Audio] Audio pausado');
+          // Si el audio termina naturalmente (currentTime === duration), resolver
+          if (audio.ended && !resolved) {
+            console.log('[Audio] Audio terminado (detectado en onpause)');
+            resolved = true;
+            URL.revokeObjectURL(audioUrl);
+            currentAudioRef.current = null;
+            resolve();
+          }
+        };
+        
+        currentAudioRef.current = audio;
+        console.log('[Audio] Iniciando reproducción...');
+        
+        try {
+          await audio.play();
+          console.log('[Audio] Reproducción iniciada exitosamente, esperando que termine...');
+        } catch (playError) {
+          console.error('[Audio] Error en play():', playError);
+          if (!resolved) {
+            resolved = true;
+            reject(playError);
+          }
+        }
+        
+      } catch (error) {
+        console.error('[Audio] Error general:', error);
+        if (!resolved) {
+          resolved = true;
+          reject(error);
+        }
+      }
+    });
+  };
+
+  // Función para reproducir mensaje con ElevenLabs TTS (botón en mensajes)
+  const playMessageAudio = async (messageId: string, text: string) => {
+    if (isPlayingAudio === messageId) {
+      stopAudio();
+      return;
+    }
+
+    stopAudio();
+
+    try {
+      setIsPlayingAudio(messageId);
+      
+      const cleanText = text
+        .replace(/<[^>]*>/g, '')
+        .replace(/\*\*/g, '')
+        .replace(/\n/g, ' ');
+
+      const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': ELEVENLABS_API_KEY
+          },
+          body: JSON.stringify({
+            text: cleanText,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.5
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al generar audio');
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsPlayingAudio(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsPlayingAudio(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      currentAudioRef.current = audio;
+      await audio.play();
+      
+    } catch (error) {
+      console.error('Error al reproducir audio:', error);
+      setIsPlayingAudio(null);
+    }
+  };
+
+  // Función para detener el audio actual
+  const stopAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    setIsPlayingAudio(null);
+  };
+
   return (
     <Box sx={{
       display: "flex",
@@ -252,36 +737,66 @@ export default function AsistentePage() {
 
                 {/* Bubble */}
                 <Box sx={{ flex: 1 }}>
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      p: { xs: 2, sm: 2.5 },
-                      borderRadius: message.sender === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-                      bgcolor: message.sender === "user" ? "grey.200" : "primary.main",
-                      color: message.sender === "user" ? "text.primary" : "white"
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      component="div"
+                  <Box sx={{ position: 'relative' }}>
+                    <Paper
+                      elevation={1}
                       sx={{
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                        lineHeight: 1.6,
-                        fontSize: { xs: "0.9rem", sm: "1rem" },
-                        '& strong': {
-                          fontWeight: 700,
-                          textDecoration: message.sender === "user" ? "none" : "underline",
-                          color: message.sender === "user" ? "primary.main" : "white"
-                        }
+                        p: { xs: 2, sm: 2.5 },
+                        borderRadius: message.sender === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                        bgcolor: message.sender === "user" ? "grey.200" : "primary.main",
+                        color: message.sender === "user" ? "text.primary" : "white"
                       }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: message.content
-                          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\n/g, '<br>')
-                      }}
-                    />
-                  </Paper>
+                    >
+                      <Typography
+                        variant="body1"
+                        component="div"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          lineHeight: 1.6,
+                          fontSize: { xs: "0.9rem", sm: "1rem" },
+                          '& strong': {
+                            fontWeight: 700,
+                            textDecoration: message.sender === "user" ? "none" : "underline",
+                            color: message.sender === "user" ? "primary.main" : "white"
+                          }
+                        }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: message.content
+                            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n/g, '<br>')
+                        }}
+                      />
+                    </Paper>
+                    
+                    {/* Botón de reproducir audio para mensajes del asistente */}
+                    {message.sender === "assistant" && (
+                      <Tooltip title={isPlayingAudio === message.id ? "Detener audio" : "Escuchar mensaje"}>
+                        <IconButton
+                          size="small"
+                          onClick={() => playMessageAudio(message.id, message.content)}
+                          sx={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            bgcolor: 'rgba(255, 255, 255, 0.2)',
+                            color: 'white',
+                            '&:hover': {
+                              bgcolor: 'rgba(255, 255, 255, 0.3)',
+                            },
+                            width: 28,
+                            height: 28
+                          }}
+                        >
+                          {isPlayingAudio === message.id ? (
+                            <StopCircleIcon sx={{ fontSize: 16 }} />
+                          ) : (
+                            <VolumeUpIcon sx={{ fontSize: 16 }} />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
 
                   {/* JSON Accordion */}
                   {message.rawJson && (
@@ -409,6 +924,43 @@ export default function AsistentePage() {
           mx: "auto",
           px: { xs: 2, sm: 4 }
         }}>
+          {/* Indicador de estado de llamada */}
+          {isInCall && (
+            <Box sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              mb: 1.5,
+              bgcolor: isListening ? "success.50" : "grey.50",
+              p: 1.5,
+              borderRadius: "12px",
+              border: "1px solid",
+              borderColor: isListening ? "success.main" : "grey.300"
+            }}>
+              <Box sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: isListening ? "success.main" : "grey.500",
+                animation: isListening ? "blink 1.5s infinite" : "none",
+                "@keyframes blink": {
+                  "0%, 100%": { opacity: 1 },
+                  "50%": { opacity: 0.3 }
+                }
+              }} />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: isListening ? "success.dark" : "grey.700",
+                  fontWeight: 600
+                }}
+              >
+                {isListening ? "🎤 Escuchando..." : isLoading ? "⏳ Procesando respuesta..." : "🔇 En espera"}
+              </Typography>
+            </Box>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <Box sx={{
               display: "flex",
@@ -428,8 +980,8 @@ export default function AsistentePage() {
                 maxRows={4}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Envía un mensaje a Maya..."
-                disabled={isLoading}
+                placeholder={isRecording ? "Escuchando..." : "Envía un mensaje a Maya..."}
+                disabled={isLoading || isRecording || isInCall}
                 variant="standard"
                 InputProps={{
                   disableUnderline: true,
@@ -451,9 +1003,95 @@ export default function AsistentePage() {
                   }
                 }}
               />
+              
+              {/* Botón de micrófono (mensaje individual) */}
+              <Tooltip title={isRecording ? "Detener grabación" : "Grabar mensaje de voz"}>
+                <IconButton
+                  onClick={toggleRecording}
+                  disabled={isLoading || isInCall}
+                  sx={{
+                    bgcolor: isRecording ? "error.main" : "grey.100",
+                    color: isRecording ? "white" : "grey.600",
+                    width: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
+                    flexShrink: 0,
+                    transition: "all 0.2s ease",
+                    animation: isRecording ? "pulse 1.5s infinite" : "none",
+                    "@keyframes pulse": {
+                      "0%": {
+                        boxShadow: "0 0 0 0 rgba(244, 67, 54, 0.7)"
+                      },
+                      "70%": {
+                        boxShadow: "0 0 0 10px rgba(244, 67, 54, 0)"
+                      },
+                      "100%": {
+                        boxShadow: "0 0 0 0 rgba(244, 67, 54, 0)"
+                      }
+                    },
+                    "&:hover": {
+                      bgcolor: isRecording ? "error.dark" : "grey.200",
+                      transform: !isLoading ? "scale(1.05)" : "none"
+                    },
+                    "&:disabled": {
+                      bgcolor: "grey.200",
+                      color: "grey.400"
+                    }
+                  }}
+                >
+                  {isRecording ? (
+                    <StopIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                  ) : (
+                    <MicIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+
+              {/* Botón de llamada (conversación continua) */}
+              <Tooltip title={isInCall ? "Terminar conversación" : "Iniciar conversación continua"}>
+                <IconButton
+                  onClick={isInCall ? endConversation : startConversation}
+                  disabled={isLoading && !isInCall}
+                  sx={{
+                    bgcolor: isInCall ? "error.main" : "success.main",
+                    color: "white",
+                    width: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
+                    flexShrink: 0,
+                    transition: "all 0.2s ease",
+                    animation: isListening ? "pulse-green 1.5s infinite" : "none",
+                    "@keyframes pulse-green": {
+                      "0%": {
+                        boxShadow: "0 0 0 0 rgba(76, 175, 80, 0.7)"
+                      },
+                      "70%": {
+                        boxShadow: "0 0 0 10px rgba(76, 175, 80, 0)"
+                      },
+                      "100%": {
+                        boxShadow: "0 0 0 0 rgba(76, 175, 80, 0)"
+                      }
+                    },
+                    "&:hover": {
+                      bgcolor: isInCall ? "error.dark" : "success.dark",
+                      transform: "scale(1.05)"
+                    },
+                    "&:disabled": {
+                      bgcolor: "grey.200",
+                      color: "grey.400"
+                    }
+                  }}
+                >
+                  {isInCall ? (
+                    <CallEndIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                  ) : (
+                    <PhoneIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+
+              {/* Botón de enviar */}
               <IconButton
                 type="submit"
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!inputValue.trim() || isLoading || isInCall}
                 sx={{
                   bgcolor: inputValue.trim() && !isLoading ? "primary.main" : "grey.200",
                   color: "white",
